@@ -248,7 +248,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
     setPlayers(paid);
     setOrderTokens(tokens);
     setPhase("Income");
-    addLog(`Starting order: ${paid.map((p, i) => `${i + 1}:${p.faction.emoji}`).join(" ")}`);
+    addLog(`Starting order: ${paid.map((p, i) => `${i + 1}:${p.faction.emoji}`).join(" ")}`);    _push();
   }
 
   function dealPolicyHands(basePlayers) {
@@ -287,7 +287,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
     setSelectedPolicy("");
     setPhase("Build");
     setTurn(0);
-    addLog(`Income paid. ${gains.map(x => `${players.find(p => p.id === x.id)?.faction.emoji}+${x.g}`).join(" ")}. Each player drew 3 from the 12-card policy deck.`);
+    addLog(`Income paid. ${gains.map(x => `${players.find(p => p.id === x.id)?.faction.emoji}+${x.g}`).join(" ")}. Each player drew 3 from the 12-card policy deck.`);    _push();
   }
 
   function roadDiscount(pid, tileIndex) {
@@ -298,7 +298,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
   }
 
   function next() {
-    if (turn < players.length - 1) { setTurn(turn + 1); return; }
+    if (turn < players.length - 1) { setTurn(turn + 1); _push({turn:turn+1}); return; }
     setTurn(0);
     if (phase === "Build") setPhase("Policy");
     else if (phase === "Policy") {
@@ -421,7 +421,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
     if (second && hasStruct(second.id, "shadow")) gainVotes(second.id, 3);
     players.forEach(p => { if (p.id !== win.id && hasStruct(p.id, "antirally")) gainVotes(p.id, 2); });
     setGovBids({});
-    addLog(`${win.faction.emoji} won Governor with ${win.bid}g. ${second?.faction.emoji} was second.`);
+    addLog(`${win.faction.emoji} won Governor with ${win.bid}g. ${second?.faction.emoji} was second.`);    _push();
   }
 
   function vote() {
@@ -615,7 +615,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
                 {phase === "Negotiation" && (
                   <>
                     <p className="text-sm">Negotiate, bribe, trade policy cards, and make non-binding deals.</p>
-                    <Button onClick={() => { setPhase("Election"); setTurn(0); }} className="w-full"><Handshake className="w-4 mr-1" />Start Election</Button>
+                    <Button onClick={() => { setPhase("Election"); setTurn(0); _push({phase:"Election",turn:0}); }} className="w-full"><Handshake className="w-4 mr-1" />Start Election</Button>
                   </>
                 )}
                 {phase === "Election" && (
@@ -643,7 +643,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
             <Tabs defaultValue="cards">
               <TabsList className="grid grid-cols-3 w-full rounded-xl"><TabsTrigger value="cards">Cards</TabsTrigger><TabsTrigger value="ref">Ref</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
               <TabsContent value="cards"><Card className="rounded-2xl"><CardContent className="p-3 space-y-2 max-h-80 overflow-auto">{current?.hand.map(c => <div key={c.uid} className="border rounded-xl p-2 bg-white shadow-sm"><b>{c.name}</b><Badge variant="outline" className="ml-1">{c.type}</Badge><div className="text-xs text-slate-600 mt-1">{c.text}</div></div>)}</CardContent></Card></TabsContent>
-              <TabsContent value="ref"><Card className="rounded-2xl"><CardContent className="p-3 text-xs space-y-3 max-h-80 overflow-auto"><div className="font-black text-base mb-1">📜 RULES REFERENCE</div><div>🔄 <b>Round Flow:</b> Income → Build → Policy → Negotiation → Election</div><div>🏗 <b>District Ownership:</b> control a district by owning the most buildings there.</div><div>🔒 <b>District Lock:</b> once a player builds in a district, nobody else may build there that round.</div><div>🛣 <b>Roads:</b> roads give +1 income and reduce build costs by 1 in the same and adjacent districts. Horse roads give +2 income.</div><div>🗳 <b>Election:</b> every player casts 1 vote at end of round unless modified by cards/buildings.</div><div>👑 <b>Governor Rounds:</b> happen every 3 rounds. Highest bidder becomes Governor and is the only player who pays gold.</div><div>📨 <b>Governor Voting:</b> during Governor rounds, all election votes go to the Governor.</div><div>🥈 <b>Second Place Bids:</b> Shadow Cabinet rewards players for bidding second-highest.</div><div>🤝 <b>Negotiation:</b> players may trade gold, promise votes, and trade policy cards.</div><div>🏆 <b>Winning:</b> after Round 9, the player with the most votes wins.</div><div className="font-black text-base mt-3 mb-1">🏗 BUILDINGS</div>{STRUCTURES.map(s => <div key={s.id}>{s.name} — {s.cost}g: {s.text}</div>)}<b>Policies:</b>{POLICIES.map(p => <div key={p.id}>{p.name}: {p.text}</div>)}</CardContent></Card></TabsContent>
+              <TabsContent value="ref"><Card className="rounded-2xl"><CardContent className="p-3 text-xs space-y-3 max-h-80 overflow-auto"><div className="font-black text-base mb-1">📜 RULES REFERENCE</div><div>🔄 <b>Round Flow:</b> Income → Build → Policy → Negotiation → Election</div><div>🏗 <b>District Ownership:</b> control a district by owning the most buildings there.</div><div>🗓 <b>Build Order:</b> each round, the player with the FEWEST votes builds first. Ties broken by previous order token (lower number = builds earlier). This resets each election.</div><div>🔒 <b>District Lock:</b> once a player builds in a district, nobody else may build there that round.</div><div>🛣 <b>Roads:</b> roads give +1 income and reduce build costs by 1 in the same and adjacent districts. Horse roads give +2 income.</div><div>🗳 <b>Election:</b> every player casts 1 vote at end of round unless modified by cards/buildings.</div><div>👑 <b>Governor Rounds:</b> happen every 3 rounds. Highest bidder becomes Governor and is the only player who pays gold.</div><div>📨 <b>Governor Voting:</b> during Governor rounds, all election votes go to the Governor.</div><div>🥈 <b>Second Place Bids:</b> Shadow Cabinet rewards players for bidding second-highest.</div><div>🤝 <b>Negotiation:</b> players may trade gold, promise votes, and trade policy cards.</div><div>🏆 <b>Winning:</b> after Round 9, the player with the most votes wins.</div><div className="font-black text-base mt-3 mb-1">🏗 BUILDINGS</div>{STRUCTURES.map(s => <div key={s.id}>{s.name} — {s.cost}g: {s.text}</div>)}<b>Policies:</b>{POLICIES.map(p => <div key={p.id}>{p.name}: {p.text}</div>)}</CardContent></Card></TabsContent>
               <TabsContent value="log"><Card className="rounded-2xl"><CardContent className="p-3 text-xs space-y-1 max-h-80 overflow-auto">{log.map((l, i) => <div key={i} className="border-b">{l}</div>)}</CardContent></Card></TabsContent>
             </Tabs>
           </div>
@@ -723,7 +723,7 @@ function WaitingRoom({roomCode,myId,isHost,onStart}){
   useEffect(()=>{if(started&&players.length>0&&!startedFired.current){startedFired.current=true;onStart();}}, [started,players.length]);
   async function startGame(){
     const FACTIONS=[{id:"pig",name:"Pig Syndicate",emoji:"🐷",color:"bg-pink-100 border-pink-300",ability:"When another player votes for you, they gain +2 gold.",description:"Masters of corruption."},{id:"horse",name:"Horse Union",emoji:"🐴",color:"bg-amber-100 border-amber-300",ability:"Your roads produce +2 gold instead of +1.",description:"Masters of infrastructure."},{id:"duck",name:"Duck Coalition",emoji:"🦆",color:"bg-sky-100 border-sky-300",ability:"Whenever any player builds in River, gain +1 gold.",description:"Flexible opportunists."},{id:"goat",name:"Goat Party",emoji:"🐐",color:"bg-stone-100 border-stone-300",ability:"Whenever another player becomes Governor, gain +2 gold.",description:"Anti-government faction."}];
-    const DISTRICTS=[{id:"rural",name:"Rural"},{id:"commerce",name:"Commerce"},{id:"civic",name:"Civic"},{id:"media",name:"Media"},{id:"industrial",name:"Industrial"},{id:"entertainment",name:"Entertainment"},{id:"river",name:"River"},{id:"university",name:"University"},{id:"fairgrounds",name:"Fairgrounds"}];
+    const DISTRICTS=[{id:"rural",name:"Rural",text:"Owner: buildings cost 1 less here and gain +1 gold."},{id:"commerce",name:"Commerce",text:"Owner: gain +3 gold during income."},{id:"civic",name:"Civic",text:"Owner: gain +1 vote at end of each election."},{id:"media",name:"Media",text:"Owner: Score/Combo policies that gain votes gain +1 extra vote."},{id:"industrial",name:"Industrial",text:"Owner: economic structures here produce +1 extra gold."},{id:"entertainment",name:"Entertainment",text:"Owner: vote-gaining buildings here give +1 extra vote."},{id:"river",name:"River",text:"Owner: roads cost 1 less here."},{id:"university",name:"University",text:"Owner: you may play 2 policy cards each round instead of 1."},{id:"fairgrounds",name:"Fairgrounds",text:"Owner: public/project style bonuses give +1 extra vote."}];
     const POLICIES=[{id:"unity",name:"Farm Unity Act",type:"Score",text:"+1 vote if you control 2+ districts.",effect:"unity"},{id:"copycat",name:"Electoral Copycat",type:"Score",text:"+1 vote if another player has more votes.",effect:"copycat"},{id:"surge",name:"Popularity Surge",type:"Score",text:"+1 vote. +1 more if you own Debate Stage.",effect:"surge"},{id:"selfvote",name:"Write-In Campaign",type:"Election",text:"You may vote for yourself this round.",effect:"selfvote"},{id:"superballot",name:"Super Ballot",type:"Election",text:"Your election vote counts +1.",effect:"votePower"},{id:"districtmachine",name:"District Machine",type:"Score",text:"+1 vote if you control selected district.",effect:"districtMachine"},{id:"smear",name:"Smear Campaign",type:"Control",text:"Target loses 1 vote.",effect:"smear"},{id:"rural2",name:"Rural Outreach",type:"Score",text:"+1 vote if you control Rural.",effect:"rural"},{id:"stimulus",name:"Economic Stimulus",type:"Economy",text:"+3 gold.",effect:"stimulus"},{id:"corp",name:"Corporate Donation",type:"Economy",text:"+5 gold. Lose 1 vote if leading.",effect:"corp"},{id:"taxcuts",name:"Tax Cuts",type:"Economy",text:"Everyone +1 gold. +1 vote if you control Commerce.",effect:"taxcuts"},{id:"roads",name:"Highway Expansion",type:"Economy",text:"Your next road this round is free.",effect:"roads"}];
     function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
     const factions=shuffle(FACTIONS).slice(0,players.length);
