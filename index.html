@@ -8,34 +8,21 @@
 <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script type="module">
-  import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import{getDatabase,ref,set,onValue,get}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-  const cfg={
-    apiKey:"AIzaSyBWGxGJiNv1s2q6BTjFRfdAcc4OGIltVGc",
-    authDomain:"farmageddon-dae8b.firebaseapp.com",
-    projectId:"farmageddon-dae8b",
-    storageBucket:"farmageddon-dae8b.firebasestorage.app",
-    messagingSenderId:"717454704896",
-    appId:"1:717454704896:web:07d2a5fbaca3cce3e073e5",
-    databaseURL:"https://farmageddon-dae8b-default-rtdb.firebaseio.com"
-  };
-  const app=initializeApp(cfg);
-  const db=getDatabase(app);
-  window.__fbSet=(path,val)=>set(ref(db,path),val);
-  window.__fbWatch=(path,cb)=>onValue(ref(db,path),snap=>cb(snap.val()));
-  window.__fbGet=(path)=>get(ref(db,path)).then(s=>s.val());
-  window.__fbReady=true;
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({apiKey:"AIzaSyBWGxGJiNv1s2q6BTjFRfdAcc4OGIltVGc",authDomain:"farmageddon-dae8b.firebaseapp.com",projectId:"farmageddon-dae8b",storageBucket:"farmageddon-dae8b.firebasestorage.app",messagingSenderId:"717454704896",appId:"1:717454704896:web:07d2a5fbaca3cce3e073e5",databaseURL:"https://farmageddon-dae8b-default-rtdb.firebaseio.com"});
+const db=firebase.database();
+window.fbSet=(p,v)=>db.ref(p).set(v);
+window.fbGet=(p)=>db.ref(p).get().then(s=>s.val());
+window.fbWatch=(p,cb)=>{const r=db.ref(p);r.on('value',s=>cb(s.val()));return()=>r.off('value');};
 </script>
-<style>
-.select-dropdown{position:absolute;top:100%;left:0;right:0;z-index:9999;background:white;border:1px solid #e5e7eb;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.15);margin-top:2px;max-height:220px;overflow-y:auto;}
-.select-item:hover{background:#f3f4f6;}
-</style>
+<style>.select-dropdown{position:absolute;top:100%;left:0;right:0;z-index:9999;background:white;border:1px solid #e5e7eb;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.15);margin-top:2px;max-height:220px;overflow-y:auto;}.select-item:hover{background:#f3f4f6;}</style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 <div id="root"></div>
 <script type="text/babel">
-const{useState,useMemo,useRef,useEffect,useCallback}=React;
+const{useState,useEffect,useRef,useMemo}=React;
 
 const Coins=(p)=><svg xmlns="http://www.w3.org/2000/svg" width={p.size||16} height={p.size||16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg>;
 const Vote=(p)=><svg xmlns="http://www.w3.org/2000/svg" width={p.size||16} height={p.size||16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 12 2 2 4-4"/><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7z"/><path d="M22 19H2"/></svg>;
@@ -56,241 +43,43 @@ const Trophy=(p)=><svg xmlns="http://www.w3.org/2000/svg" width={p.size||16} hei
 function Card({className="",children,...p}){return<div className={"rounded-lg border bg-white shadow-sm "+className}{...p}>{children}</div>;}
 function CardContent({className="",children,...p}){return<div className={"p-4 "+className}{...p}>{children}</div>;}
 function Button({className="",variant="default",size="default",children,...p}){
-  const base="inline-flex items-center justify-center gap-1 rounded-md font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer ";
+  const b="inline-flex items-center justify-center gap-1 rounded-md font-medium transition-colors focus:outline-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer ";
   const v={default:"bg-gray-900 text-white hover:bg-gray-700 ",outline:"border border-gray-300 bg-white hover:bg-gray-50 text-gray-900 ",ghost:"bg-transparent hover:bg-gray-100 text-gray-900 ",destructive:"bg-red-600 text-white hover:bg-red-700 "};
   const s={default:"h-9 px-4 py-2 text-sm ",sm:"h-7 px-3 text-xs ",lg:"h-11 px-8 text-base ",icon:"h-9 w-9 "};
-  return<button className={base+(v[variant]||v.default)+(s[size]||s.default)+className}{...p}>{children}</button>;
+  return<button className={b+(v[variant]||v.default)+(s[size]||s.default)+className}{...p}>{children}</button>;
 }
 function Badge({className="",variant="default",children,...p}){
   const v={default:"bg-gray-900 text-white ",secondary:"bg-gray-100 text-gray-800 ",outline:"border border-gray-300 text-gray-700 ",destructive:"bg-red-100 text-red-800 "};
   return<span className={"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold "+(v[variant]||v.default)+className}{...p}>{children}</span>;
 }
 function Tabs({value,onValueChange,defaultValue,children,className=""}){
-  const[internal,setInternal]=useState(defaultValue||"");
-  const active=value!==undefined?value:internal;
-  const setActive=onValueChange||setInternal;
-  return<div className={"w-full "+className}>{React.Children.map(children,c=>c?React.cloneElement(c,{_activeTab:active,_onTabChange:setActive}):null)}</div>;
+  const[iv,setIv]=useState(defaultValue||"");
+  const active=value!==undefined?value:iv;
+  const sa=onValueChange||setIv;
+  return<div className={"w-full "+className}>{React.Children.map(children,c=>c?React.cloneElement(c,{_a:active,_s:sa}):null)}</div>;
 }
-function TabsList({children,className="",_activeTab,_onTabChange}){
-  return<div className={"inline-flex h-9 items-center justify-start rounded-lg bg-gray-100 p-1 flex-wrap gap-1 "+className}>{React.Children.map(children,c=>c?React.cloneElement(c,{_activeTab,_onTabChange}):null)}</div>;
-}
-function TabsTrigger({value,children,className="",_activeTab,_onTabChange}){
-  const active=_activeTab===value;
-  return<button onClick={()=>_onTabChange&&_onTabChange(value)} className={"inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-all cursor-pointer "+(active?"bg-white shadow text-gray-900 ":"text-gray-500 hover:text-gray-900 ")+className}>{children}</button>;
-}
-function TabsContent({value,children,_activeTab}){return _activeTab===value?<div>{children}</div>:null;}
+function TabsList({children,className="",_a,_s}){return<div className={"inline-flex h-9 items-center justify-start rounded-lg bg-gray-100 p-1 flex-wrap gap-1 "+className}>{React.Children.map(children,c=>c?React.cloneElement(c,{_a,_s}):null)}</div>;}
+function TabsTrigger({value,children,className="",_a,_s}){return<button onClick={()=>_s&&_s(value)} className={"inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium transition-all cursor-pointer "+(_a===value?"bg-white shadow text-gray-900 ":"text-gray-500 hover:text-gray-900 ")+className}>{children}</button>;}
+function TabsContent({value,children,_a}){return _a===value?<div>{children}</div>:null;}
 function Select({value,onValueChange,children}){
   const[open,setOpen]=useState(false);
   const ref=useRef(null);
-  useEffect(()=>{
-    function h(e){if(ref.current&&!ref.current.contains(e.target))setOpen(false);}
-    document.addEventListener('mousedown',h);
-    return()=>document.removeEventListener('mousedown',h);
-  },[]);
+  useEffect(()=>{const h=(e)=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h);},[]);
   const items=[];
-  const collect=(c)=>{
-    if(!c)return;
-    if(Array.isArray(c)){c.forEach(collect);return;}
-    if(c.type&&c.type.name==='SelectItem'&&c.props&&c.props.value!==undefined){
-      const lbl=typeof c.props.children==='string'?c.props.children:c.props.value;
-      items.push({value:c.props.value,label:lbl});
-    }
-    if(c.props&&c.props.children)collect(c.props.children);
-  };
-  React.Children.forEach(children,collect);
-  const currentLabel=items.find(i=>i.value===value)?.label||value||'';
-  return(
-    <div ref={ref} style={{position:'relative',display:'inline-block',minWidth:'140px'}}>
-      {React.Children.map(children,c=>c?React.cloneElement(c,{_open:open,_setOpen:setOpen,_currentLabel:currentLabel,_onValueChange:onValueChange}):null)}
-    </div>
-  );
+  const col=(c)=>{if(!c)return;if(Array.isArray(c)){c.forEach(col);return;}if(c.type&&c.type.name==='SelectItem'&&c.props?.value!==undefined){items.push({value:c.props.value,label:typeof c.props.children==='string'?c.props.children:String(c.props.value)});}if(c.props?.children)col(c.props.children);};
+  React.Children.forEach(children,col);
+  const lbl=items.find(i=>i.value===value)?.label||value||'';
+  return(<div ref={ref} style={{position:'relative',display:'inline-block',minWidth:'140px'}}>{React.Children.map(children,c=>c?React.cloneElement(c,{_open:open,_setOpen:setOpen,_lbl:lbl,_onChange:onValueChange}):null)}</div>);
 }
-function SelectTrigger({className="",children,_open,_setOpen,_currentLabel}){
-  const placeholder=React.Children.toArray(children).map(c=>c&&c.props&&c.props.placeholder).find(Boolean)||'';
-  return(
-    <button type="button" onClick={()=>_setOpen&&_setOpen(o=>!o)}
-      className={"flex w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 "+className}>
-      <span>{_currentLabel||placeholder}</span>
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
-    </button>
-  );
+function SelectTrigger({className="",children,_open,_setOpen,_lbl}){
+  const ph=React.Children.toArray(children).map(c=>c?.props?.placeholder).find(Boolean)||'';
+  return(<button type="button" onClick={()=>_setOpen&&_setOpen(o=>!o)} className={"flex w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 "+className}><span>{_lbl||ph}</span><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg></button>);
 }
-function SelectValue({placeholder,_currentLabel}){return<span>{_currentLabel||placeholder||''}</span>;}
-function SelectContent({children,_open,_onValueChange,_setOpen}){
-  if(!_open)return null;
-  return<div className="select-dropdown">{React.Children.map(children,c=>c?React.cloneElement(c,{_onValueChange,_setOpen}):null)}</div>;
-}
-function SelectItem({value,children,_onValueChange,_setOpen}){
-  return<div className="select-item px-3 py-2 text-sm cursor-pointer" onClick={()=>{_onValueChange&&_onValueChange(value);_setOpen&&_setOpen(false);}}>{children}</div>;
-}
-function Input({className="",...p}){
-  return<input className={"flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 "+className}{...p}/>;
-}
-
-
-/* ===== Firebase helpers (wait for module to load) ===== */
-function fbSet(path,val){if(window.__fbSet)return window.__fbSet(path,val);return Promise.reject('FB not ready');}
-function fbWatch(path,cb){if(window.__fbWatch)return window.__fbWatch(path,cb);return()=>{};}
-
-/* ===== Room code generator ===== */
-function genCode(){return Math.random().toString(36).slice(2,8).toUpperCase();}
-
-/* ===== Lobby screen ===== */
-function Lobby({onEnter}){
-  const[mode,setMode]=useState(null);
-  const[code,setCode]=useState('');
-  const[name,setName]=useState('');
-  const[err,setErr]=useState('');
-  const[loading,setLoading]=useState(false);
-
-  async function createRoom(){
-    if(!name.trim()){setErr('Enter your name');return;}
-    setLoading(true);
-    const roomCode=genCode();
-    const myId='0';
-    await fbSet('rooms/'+roomCode,{
-      host:myId,
-      started:false,
-      players:[{id:myId,name:name.trim(),ready:true}]
-    });
-    onEnter({roomCode,myId,isHost:true,myName:name.trim()});
-    setLoading(false);
-  }
-
-  async function joinRoom(){
-    if(!name.trim()){setErr('Enter your name');return;}
-    if(code.length<4){setErr('Enter a valid room code');return;}
-    setLoading(true);
-    const upper=code.toUpperCase();
-    try{
-      const room=await window.__fbGet('rooms/'+upper);
-      if(!room){setErr('Room not found');setLoading(false);return;}
-      if(room.started){setErr('Game already started');setLoading(false);return;}
-      const existing=room.players||[];
-      if(existing.length>=4){setErr('Room is full');setLoading(false);return;}
-      const myId=String(existing.length);
-      const updated=[...existing,{id:myId,name:name.trim(),ready:true}];
-      await fbSet('rooms/'+upper+'/players',updated);
-      onEnter({roomCode:upper,myId,isHost:false,myName:name.trim()});
-    }catch(e){setErr('Error: '+e.message);}
-    setLoading(false);
-  }
-
-  return(
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-sky-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-3xl shadow-lg p-8 w-full max-w-md">
-        <h1 className="text-4xl font-black text-green-800 mb-1">🐷 Farmageddon</h1>
-        <p className="text-slate-500 mb-6 text-sm">Online multiplayer prototype</p>
-        {!mode?(
-          <div className="space-y-3">
-            <Button className="w-full bg-green-700 text-lg py-3 h-auto" onClick={()=>setMode('create')}>🏠 Create Room</Button>
-            <Button className="w-full" variant="outline" onClick={()=>setMode('join')}>🔗 Join Room</Button>
-          </div>
-        ):(
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-slate-700 block mb-1">Your name</label>
-              <Input value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your name" maxLength={20}/>
-            </div>
-            {mode==='join'&&(
-              <div>
-                <label className="text-sm font-medium text-slate-700 block mb-1">Room code</label>
-                <Input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="e.g. ABC123" maxLength={6} className="uppercase tracking-widest text-lg font-bold"/>
-              </div>
-            )}
-            {err&&<p className="text-red-500 text-sm">{err}</p>}
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={()=>{setMode(null);setErr('');}}>Back</Button>
-              <Button className="flex-1 bg-green-700" onClick={mode==='create'?createRoom:joinRoom} disabled={loading}>
-                {loading?'...':(mode==='create'?'Create':'Join')}
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ===== Waiting room ===== */
-function WaitingRoom({roomCode,myId,isHost,myName,onStart}){
-  const[players,setPlayers]=useState([]);
-  useEffect(()=>{
-    return fbWatch('rooms/'+roomCode+'/players',ps=>{if(ps)setPlayers(ps);});
-  },[roomCode]);
-  useEffect(()=>{
-    return fbWatch('rooms/'+roomCode+'/started',s=>{if(s===true)onStart(players);});
-  },[roomCode]);
-
-  function startGame(){
-    fbSet('rooms/'+roomCode+'/started',true);
-  }
-
-  return(
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-sky-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-3xl shadow-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-black text-green-800 mb-1">Waiting Room</h2>
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-slate-500 text-sm">Room code:</span>
-          <span className="font-mono font-black text-2xl text-green-700 tracking-widest">{roomCode}</span>
-          <button onClick={()=>navigator.clipboard.writeText(roomCode)} className="text-xs text-slate-400 hover:text-slate-600 ml-1">📋 copy</button>
-        </div>
-        <div className="space-y-2 mb-6">
-          {players.map((p,i)=>(
-            <div key={i} className="flex items-center gap-2 p-2 bg-green-50 rounded-lg">
-              <span>{['🐷','🐴','🦆','🐐'][i]||'👤'}</span>
-              <span className="font-medium">{p.name}</span>
-              {p.id===myId&&<span className="text-xs text-green-600">(you)</span>}
-              {i===0&&<span className="text-xs text-amber-600 ml-auto">host</span>}
-            </div>
-          ))}
-          {players.length<4&&<p className="text-slate-400 text-sm text-center">Waiting for more players... ({players.length}/4)</p>}
-        </div>
-        {isHost?(
-          <Button className="w-full bg-green-700" onClick={startGame} disabled={players.length<2}>
-            {players.length<2?'Need at least 2 players':'Start Game →'}
-          </Button>
-        ):(
-          <p className="text-center text-slate-500 text-sm">Waiting for host to start...</p>
-        )}
-      </div>
-    </div>
-  );
-}
+function SelectValue({placeholder,_lbl}){return<span>{_lbl||placeholder||''}</span>;}
+function SelectContent({children,_open,_onChange,_setOpen}){if(!_open)return null;return<div className="select-dropdown">{React.Children.map(children,c=>c?React.cloneElement(c,{_onChange,_setOpen}):null)}</div>;}
+function SelectItem({value,children,_onChange,_setOpen}){return<div className="select-item px-3 py-2 text-sm cursor-pointer" onClick={()=>{_onChange&&_onChange(value);_setOpen&&_setOpen(false);}}>{children}</div>;}
+function Input({className="",...p}){return<input className={"flex h-9 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 "+className}{...p}/>;}
 const DISTRICTS = [
-
-  // --- ONLINE SYNC ---
-  // When externalState changes (from Firebase), update local state
-  useEffect(()=>{
-    if(!externalState)return;
-    setSetup(externalState.setup!==undefined?externalState.setup:true);
-    if(externalState.players)setPlayers(externalState.players);
-    if(externalState.board)setBoard(externalState.board);
-    if(externalState.deck)setDeck(externalState.deck);
-    if(externalState.round!==undefined)setRound(externalState.round);
-    if(externalState.phase)setPhase(externalState.phase);
-    if(externalState.turn!==undefined)setTurn(externalState.turn);
-    if(externalState.log)setLog(externalState.log);
-    if(externalState.selectedTile!==undefined)setSelectedTile(externalState.selectedTile);
-    if(externalState.selectedStructure)setSelectedStructure(externalState.selectedStructure);
-    if(externalState.selectedPolicy!==undefined)setSelectedPolicy(externalState.selectedPolicy||"");
-    if(externalState.target!==undefined)setTarget(externalState.target||"");
-    if(externalState.setupBids)setSetupBids(externalState.setupBids);
-    if(externalState.voteTarget!==undefined)setVoteTarget(externalState.voteTarget||"");
-    if(externalState.governor!==undefined)setGovernor(externalState.governor);
-  },[externalState?._ts]);
-
-  // Push entire state to Firebase after any action
-  function pushToFirebase(overrides={}){
-    if(!onStateChange)return;
-    onStateChange({
-      setup,players,board,deck,round,phase,turn,log,
-      selectedTile,selectedStructure,selectedPolicy,
-      target,setupBids,voteTarget,governor,
-      ...overrides,_ts:Date.now()
-    });
-  }
-  // --- END ONLINE SYNC ---
   { id: "rural", name: "Rural", icon: Wheat, text: "Owner: buildings cost 1 less here and gain +1 gold." },
   { id: "commerce", name: "Commerce", icon: Coins, text: "Owner: gain +3 gold during income." },
   { id: "civic", name: "Civic", icon: Landmark, text: "Owner: gain +1 vote at end of each election." },
@@ -388,29 +177,33 @@ function largestRoadNetwork(board, pid) {
   return best;
 }
 
-function FarmageddonPrototype({externalState,onStateChange,myPlayerId}) {
-  const [setup, setSetup] = useState(true);
+function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
+  const [setup, setSetup] = useState(initialState.setup!==undefined?initialState.setup:true);
   const [playerCount, setPlayerCount] = useState(4);
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState(initialState.players||[]);
   const [board, setBoard] = useState(makeBoard());
   const [deck, setDeck] = useState(makeDeck());
-  const [round, setRound] = useState(1);
-  const [phase, setPhase] = useState("Setup Auction");
-  const [turn, setTurn] = useState(0);
-  const [log, setLog] = useState(["Welcome to Farmageddon."]);
+  const [round, setRound] = useState(initialState.round||1);
+  const [phase, setPhase] = useState(initialState.phase||"Setup Auction");
+  const [turn, setTurn] = useState(initialState.turn||0);
+  const [log, setLog] = useState(initialState.log||["Welcome to Farmageddon."]);
   const [selectedTile, setSelectedTile] = useState(0);
   const [selectedStructure, setSelectedStructure] = useState("farm");
   const [selectedPolicy, setSelectedPolicy] = useState("");
   const [target, setTarget] = useState("");
   const [voteTarget, setVoteTarget] = useState("");
   const [setupBids, setSetupBids] = useState({});
-  const [govBids, setGovBids] = useState({});
-  const [orderTokens, setOrderTokens] = useState({});
-  const [usedDistricts, setUsedDistricts] = useState([]);
+  const [govBids, setGovBids] = useState(initialState.govBids||{});
+  const [orderTokens, setOrderTokens] = useState(initialState.orderTokens||[]);
+  const [usedDistricts, setUsedDistricts] = useState(initialState.usedDistricts||[]);
   const [selfVote, setSelfVote] = useState({});
   const [votePower, setVotePower] = useState({});
   const [roadFree, setRoadFree] = useState({});
-  const [winner, setWinner] = useState(null);
+  const [winner, setWinner] = useState(initialState.winner||null);
+
+  const _stateRef=useRef({});
+  useEffect(()=>{_stateRef.current={setup,players,board,deck,round,phase,turn,log,govBids,orderTokens,usedDistricts,winner,selectedTile,selectedStructure,selectedPolicy,target,voteTarget,setupBids,selfVote,votePower,roadFree};});
+  function _push(o={}){if(!onStateChange)return;onStateChange({..._stateRef.current,...o,_v:Date.now()});}
 
   const ctrls = useMemo(() => board.map(controller), [board]);
   const current = players[turn];
@@ -441,7 +234,7 @@ function FarmageddonPrototype({externalState,onStateChange,myPlayerId}) {
     setWinner(null);
     setLog(["Opening auction: secretly bid gold for starting order."]);
     setSetupBids({});
-    pushToFirebase();
+    _push();
   }
 
   function resolveSetup() {
@@ -514,7 +307,7 @@ function FarmageddonPrototype({externalState,onStateChange,myPlayerId}) {
       setPhase("Negotiation");
       addLog("Negotiation begins. Saloons paid.");
     } else if (phase === "Election") endRound();
-    pushToFirebase();
+    _push();
   }
 
   function triggerDuckRiverBuild(tile) {
@@ -650,6 +443,7 @@ function FarmageddonPrototype({externalState,onStateChange,myPlayerId}) {
     }
     addLog(`${current.faction.emoji} cast ${amt} vote(s).`);
     next();
+    _push();
   }
 
   function endRound() {
@@ -689,6 +483,7 @@ function FarmageddonPrototype({externalState,onStateChange,myPlayerId}) {
     setRound(r => r + 1);
     setPhase("Income");
     setTurn(0);
+    _push();
   }
 
   if (setup) {
@@ -712,7 +507,7 @@ function FarmageddonPrototype({externalState,onStateChange,myPlayerId}) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-sky-50 p-4 text-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-sky-50 p-4 text-slate-900" style={{pointerEvents:myTurn===false?"none":"auto"}}>
       <div className="max-w-7xl mx-auto space-y-4">
         <header className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 bg-white/80 border border-green-100 rounded-3xl shadow-sm p-5">
           <div>
@@ -858,139 +653,153 @@ function FarmageddonPrototype({externalState,onStateChange,myPlayerId}) {
   );
 }
 
+function genCode(){return Math.random().toString(36).slice(2,8).toUpperCase();}
 
-/* ===== App shell with Firebase game sync ===== */
-function App(){
-  const[screen,setScreen]=useState('lobby'); // lobby|waiting|game
-  const[session,setSession]=useState(null);  // {roomCode,myId,isHost,myName}
-  const[fbPlayers,setFbPlayers]=useState(null);
-
-  function handleEnter(s){setSession(s);setScreen('waiting');}
-  function handleStart(players){setFbPlayers(players);setScreen('game');}
-
-  if(screen==='lobby') return <Lobby onEnter={handleEnter}/>;
-  if(screen==='waiting') return <WaitingRoom {...session} onStart={handleStart}/>;
-  if(screen==='game') return <OnlineGame session={session} initialPlayers={fbPlayers}/>;
-  return null;
+function Lobby({onEnter}){
+  const[mode,setMode]=useState(null);
+  const[code,setCode]=useState('');
+  const[name,setName]=useState('');
+  const[err,setErr]=useState('');
+  const[busy,setBusy]=useState(false);
+  async function create(){
+    if(!name.trim()){setErr('Enter your name');return;}
+    setBusy(true);setErr('');
+    const rc=genCode(),myId='0';
+    try{await window.fbSet('rooms/'+rc,{host:myId,started:false,players:[{id:myId,name:name.trim()}]});onEnter({roomCode:rc,myId,isHost:true});}
+    catch(e){setErr(e.message);}finally{setBusy(false);}
+  }
+  async function join(){
+    if(!name.trim()){setErr('Enter your name');return;}
+    if(code.length<4){setErr('Enter a room code');return;}
+    setBusy(true);setErr('');
+    const upper=code.toUpperCase();
+    try{
+      const room=await window.fbGet('rooms/'+upper);
+      if(!room){setErr('Room not found');return;}
+      if(room.started){setErr('Game already started');return;}
+      const ex=room.players||[];
+      if(ex.length>=4){setErr('Room is full');return;}
+      const myId=String(ex.length);
+      await window.fbSet('rooms/'+upper+'/players',[...ex,{id:myId,name:name.trim()}]);
+      onEnter({roomCode:upper,myId,isHost:false});
+    }catch(e){setErr(e.message);}finally{setBusy(false);}
+  }
+  return(
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-sky-50 flex items-center justify-center p-6">
+      <div className="bg-white rounded-3xl shadow-lg p-8 w-full max-w-md">
+        <h1 className="text-4xl font-black text-green-800 mb-1">🐷 Farmageddon</h1>
+        <p className="text-slate-500 mb-6 text-sm">Online multiplayer</p>
+        {!mode?(
+          <div className="space-y-3">
+            <Button className="w-full bg-green-700 h-12 text-lg" onClick={()=>setMode('create')}>🏠 Create Room</Button>
+            <Button className="w-full h-12 text-lg" variant="outline" onClick={()=>setMode('join')}>🔗 Join Room</Button>
+          </div>
+        ):(
+          <div className="space-y-4">
+            <div><label className="block text-sm font-medium text-slate-700 mb-1">Your name</label><Input value={name} onChange={e=>setName(e.target.value)} placeholder="Enter your name" maxLength={20}/></div>
+            {mode==='join'&&<div><label className="block text-sm font-medium text-slate-700 mb-1">Room code</label><Input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="e.g. ABC123" maxLength={6} className="font-mono text-xl tracking-widest text-center"/></div>}
+            {err&&<p className="text-red-500 text-sm font-medium">{err}</p>}
+            <div className="flex gap-2 pt-1">
+              <Button variant="ghost" onClick={()=>{setMode(null);setErr('');}} disabled={busy}>← Back</Button>
+              <Button className="flex-1 bg-green-700" onClick={mode==='create'?create:join} disabled={busy}>{busy?'Please wait...':(mode==='create'?'Create Room':'Join Room')}</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-/* ===== Online game wrapper: syncs state to/from Firebase ===== */
-function OnlineGame({session,initialPlayers}){
-  const{roomCode,myId}=session;
-
-  // Full game state lives in Firebase
-  const[gameState,setGameState]=useState(null);
-  const[fbReady,setFbReady]=useState(false);
-
-  // Wait for Firebase module to load
+function WaitingRoom({roomCode,myId,isHost,onStart}){
+  const[players,setPlayers]=useState([]);
+  const[started,setStarted]=useState(false);
+  const startedFired=useRef(false);
+  const emojis=['🐷','🐴','🦆','🐐'];
   useEffect(()=>{
-    const check=setInterval(()=>{if(window.__fbReady){setFbReady(true);clearInterval(check);}},100);
-    return()=>clearInterval(check);
-  },[]);
-
-  useEffect(()=>{
-    if(!fbReady)return;
-    // Subscribe to game state from Firebase
-    const unsub=fbWatch('rooms/'+roomCode+'/gameState',gs=>{
-      if(gs)setGameState(gs);
-    });
-    return unsub;
-  },[fbReady,roomCode]);
-
-  // Push any state change up to Firebase (called by game component when host makes a move)
-  const pushState=useCallback((newState)=>{
-    fbSet('rooms/'+roomCode+'/gameState',newState);
+    const u1=window.fbWatch('rooms/'+roomCode+'/players',ps=>{if(ps)setPlayers(Array.isArray(ps)?ps:Object.values(ps));});
+    const u2=window.fbWatch('rooms/'+roomCode+'/started',s=>{if(s===true)setStarted(true);});
+    return()=>{u1&&u1();u2&&u2();};
   },[roomCode]);
-
-  if(!fbReady||!gameState){
-    // First time: host initializes the game state
-    if(fbReady&&!gameState&&session.isHost){
-      return <GameInitializer session={session} initialPlayers={initialPlayers} roomCode={roomCode} onInit={pushState}/>;
-    }
-    return(
-      <div className="min-h-screen flex items-center justify-center bg-amber-50">
-        <div className="text-center">
-          <div className="text-4xl mb-3 animate-spin">⚙️</div>
-          <p className="text-slate-600">{session.isHost?'Initializing game...':'Waiting for host to start...'}</p>
-        </div>
-      </div>
-    );
+  useEffect(()=>{if(started&&players.length>0&&!startedFired.current){startedFired.current=true;onStart();}}, [started,players.length]);
+  async function startGame(){
+    const FACTIONS=[{id:"pig",name:"Pig Syndicate",emoji:"🐷",color:"bg-pink-100 border-pink-300",ability:"When another player votes for you, they gain +2 gold.",description:"Masters of corruption."},{id:"horse",name:"Horse Union",emoji:"🐴",color:"bg-amber-100 border-amber-300",ability:"Your roads produce +2 gold instead of +1.",description:"Masters of infrastructure."},{id:"duck",name:"Duck Coalition",emoji:"🦆",color:"bg-sky-100 border-sky-300",ability:"Whenever any player builds in River, gain +1 gold.",description:"Flexible opportunists."},{id:"goat",name:"Goat Party",emoji:"🐐",color:"bg-stone-100 border-stone-300",ability:"Whenever another player becomes Governor, gain +2 gold.",description:"Anti-government faction."}];
+    const DISTRICTS=[{id:"rural",name:"Rural"},{id:"commerce",name:"Commerce"},{id:"civic",name:"Civic"},{id:"media",name:"Media"},{id:"industrial",name:"Industrial"},{id:"entertainment",name:"Entertainment"},{id:"river",name:"River"},{id:"university",name:"University"},{id:"fairgrounds",name:"Fairgrounds"}];
+    const POLICIES=[{id:"unity",name:"Farm Unity Act",type:"Score",text:"+1 vote if you control 2+ districts.",effect:"unity"},{id:"copycat",name:"Electoral Copycat",type:"Score",text:"+1 vote if another player has more votes.",effect:"copycat"},{id:"surge",name:"Popularity Surge",type:"Score",text:"+1 vote. +1 more if you own Debate Stage.",effect:"surge"},{id:"selfvote",name:"Write-In Campaign",type:"Election",text:"You may vote for yourself this round.",effect:"selfvote"},{id:"superballot",name:"Super Ballot",type:"Election",text:"Your election vote counts +1.",effect:"votePower"},{id:"districtmachine",name:"District Machine",type:"Score",text:"+1 vote if you control selected district.",effect:"districtMachine"},{id:"smear",name:"Smear Campaign",type:"Control",text:"Target loses 1 vote.",effect:"smear"},{id:"rural2",name:"Rural Outreach",type:"Score",text:"+1 vote if you control Rural.",effect:"rural"},{id:"stimulus",name:"Economic Stimulus",type:"Economy",text:"+3 gold.",effect:"stimulus"},{id:"corp",name:"Corporate Donation",type:"Economy",text:"+5 gold. Lose 1 vote if leading.",effect:"corp"},{id:"taxcuts",name:"Tax Cuts",type:"Economy",text:"Everyone +1 gold. +1 vote if you control Commerce.",effect:"taxcuts"},{id:"roads",name:"Highway Expansion",type:"Economy",text:"Your next road this round is free.",effect:"roads"}];
+    function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
+    const factions=shuffle(FACTIONS).slice(0,players.length);
+    const initPlayers=players.map((p,i)=>({id:String(i),name:p.name,faction:factions[i],gold:10,votes:0,hand:[],roads:0,policiesPlayed:0,votesThisRound:0,freeRoad:false}));
+    const board=shuffle(DISTRICTS).map((d,i)=>({...d,index:i,structures:[],roads:[]}));
+    const deck=shuffle(POLICIES.map((c,i)=>({...c,uid:c.id+i})));
+    const gs={players:initPlayers,board,deck,round:1,phase:"Setup Auction",turn:0,log:["Welcome to Farmageddon Online! "+players.length+" players."],selectedTile:0,selectedStructure:"farm",selectedPolicy:"",target:"",setupBids:{},voteTarget:"",governor:null,setup:true,govBids:{},orderTokens:[],usedDistricts:[],winner:null,_v:Date.now()};
+    await window.fbSet('rooms/'+roomCode+'/gameState',gs);
+    await window.fbSet('rooms/'+roomCode+'/started',true);
   }
+  return(
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-sky-50 flex items-center justify-center p-6">
+      <div className="bg-white rounded-3xl shadow-lg p-8 w-full max-w-md">
+        <h2 className="text-2xl font-black text-green-800 mb-1">Waiting Room</h2>
+        <div className="flex items-center gap-3 mb-6 bg-green-50 rounded-2xl p-3">
+          <span className="text-slate-500 text-sm font-medium">Room code:</span>
+          <span className="font-mono font-black text-3xl text-green-700 tracking-widest">{roomCode}</span>
+          <button onClick={()=>navigator.clipboard?.writeText(roomCode)} className="ml-auto text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded-lg">Copy</button>
+        </div>
+        <div className="space-y-2 mb-6">
+          {players.map((p,i)=>(
+            <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
+              <span className="text-lg">{emojis[i]||'👤'}</span>
+              <span className="font-medium">{p.name}</span>
+              {p.id===myId&&<span className="text-xs text-green-600 font-semibold">(you)</span>}
+              {i===0&&<span className="text-xs text-amber-600 font-semibold ml-auto">host</span>}
+            </div>
+          ))}
+          {players.length===0&&<p className="text-slate-400 text-sm text-center">Loading...</p>}
+          {players.length>0&&players.length<4&&<p className="text-slate-400 text-sm text-center">Share the code! ({players.length} player{players.length>1?'s':''})</p>}
+        </div>
+        {isHost?(<Button className={"w-full h-11 text-base "+(players.length>=2?"bg-green-700":"")} onClick={startGame} disabled={players.length<2}>{players.length<2?'Need 2+ players':'🚀 Start Game'}</Button>):(<p className="text-center text-slate-500 text-sm">⏳ Waiting for host to start...</p>)}
+      </div>
+    </div>
+  );
+}
 
-  const isMyTurn=gameState.players&&gameState.players[gameState.turn]&&gameState.players[gameState.turn].id===myId;
-
+function OnlineGame({roomCode,myId}){
+  const[gs,setGs]=useState(null);
+  useEffect(()=>{
+    const u=window.fbWatch('rooms/'+roomCode+'/gameState',d=>{if(d)setGs(d);});
+    return()=>u&&u();
+  },[roomCode]);
+  const myTurn=gs&&gs.players&&gs.players[gs.turn]&&gs.players[gs.turn].id===myId;
+  const curP=gs&&gs.players&&gs.players[gs.turn];
+  if(!gs)return(<div className="min-h-screen flex items-center justify-center bg-amber-50"><div className="text-center"><div className="text-5xl mb-3">🌾</div><p className="text-slate-600 text-lg">Loading game...</p></div></div>);
+  function pushState(newGs){window.fbSet('rooms/'+roomCode+'/gameState',{...newGs,_v:Date.now()});}
   return(
     <div>
-      {/* Turn indicator banner */}
-      <div className={"text-center py-2 text-sm font-semibold "+(isMyTurn?"bg-green-600 text-white":"bg-slate-200 text-slate-600")}>
-        {isMyTurn?"🟢 Your turn!":"⏳ Waiting for "+((gameState.players&&gameState.players[gameState.turn]&&gameState.players[gameState.turn].faction&&gameState.players[gameState.turn].faction.emoji)||'...')+"..."}
+      <div className={"sticky top-0 z-50 text-center py-2 px-4 text-sm font-semibold shadow "+(myTurn?"bg-green-600 text-white":"bg-slate-700 text-slate-100")}>
+        {myTurn?"✅ Your turn! Make a move.":"⏳ Waiting for "+(curP&&curP.faction?curP.faction.emoji+" "+curP.name:"another player")+"..."}
       </div>
-      <FarmageddonPrototype
-        externalState={gameState}
-        onStateChange={isMyTurn?pushState:null}
-        myPlayerId={myId}
-      />
+      <FarmageddonOnline gs={gs} myId={myId} myTurn={!!myTurn} onAction={pushState}/>
     </div>
   );
 }
 
-/* ===== Game initializer - host only ===== */
-function GameInitializer({session,initialPlayers,roomCode,onInit}){
-  const[done,setDone]=useState(false);
-
+function FarmageddonOnline({gs,myId,myTurn,onAction}){
+  const[localGs,setLocalGs]=useState(gs);
+  const[mountKey,setMountKey]=useState(gs&&gs._v?gs._v:1);
+  const lastOwnV=useRef(0);
   useEffect(()=>{
-    if(done)return;
-    setDone(true);
-    // Build initial game state using the existing game logic
-    const FACTIONS_LOCAL=[
-      {id:"pig",name:"Pig Syndicate",emoji:"🐷",color:"bg-pink-100 border-pink-300",ability:"When another player votes for you, they gain +2 gold and you gain +1 gold.",description:"Masters of corruption and political dealmaking."},
-      {id:"horse",name:"Horse Union",emoji:"🐴",color:"bg-amber-100 border-amber-300",ability:"Your roads produce +2 gold instead of +1 gold.",description:"Masters of infrastructure and connected road networks."},
-      {id:"duck",name:"Duck Coalition",emoji:"🦆",color:"bg-sky-100 border-sky-300",ability:"Whenever any player builds in the River district, gain +1 gold.",description:"Flexible opportunists that profit from river development."},
-      {id:"goat",name:"Goat Party",emoji:"🐐",color:"bg-stone-100 border-stone-300",ability:"Whenever another player becomes Governor, gain +2 gold.",description:"Anti-government faction that profits when others chase power."},
-    ];
-    const DISTRICTS_LOCAL=[
-      {id:"rural",name:"Rural"},{id:"commerce",name:"Commerce"},{id:"civic",name:"Civic"},
-      {id:"media",name:"Media"},{id:"industrial",name:"Industrial"},{id:"entertainment",name:"Entertainment"},
-      {id:"river",name:"River"},{id:"university",name:"University"},{id:"fairgrounds",name:"Fairgrounds"},
-    ];
-    const POLICIES_LOCAL=[
-      {id:"unity",name:"Farm Unity Act",type:"Score",text:"+1 vote if you control 2+ districts.",effect:"unity"},
-      {id:"copycat",name:"Electoral Copycat",type:"Score",text:"+1 vote if another player has more votes than you.",effect:"copycat"},
-      {id:"surge",name:"Popularity Surge",type:"Score",text:"+1 vote. +1 more if you own Debate Stage.",effect:"surge"},
-      {id:"selfvote",name:"Write-In Campaign",type:"Election",text:"You may vote for yourself this round.",effect:"selfvote"},
-      {id:"superballot",name:"Super Ballot",type:"Election",text:"Your election vote counts +1 this round.",effect:"votePower"},
-      {id:"districtmachine",name:"District Machine",type:"Score",text:"+1 vote if you control selected district.",effect:"districtMachine"},
-      {id:"smear",name:"Smear Campaign",type:"Control",text:"Target loses 1 vote.",effect:"smear"},
-      {id:"rural",name:"Rural Outreach",type:"Score",text:"+1 vote if you control a Rural district.",effect:"rural"},
-      {id:"stimulus",name:"Economic Stimulus",type:"Economy",text:"+3 gold.",effect:"stimulus"},
-      {id:"corp",name:"Corporate Donation",type:"Economy",text:"+5 gold. Lose 1 vote if leading.",effect:"corp"},
-      {id:"taxcuts",name:"Tax Cuts",type:"Economy",text:"Everyone +1 gold. +1 vote if you control Commerce.",effect:"taxcuts"},
-      {id:"roads",name:"Highway Expansion",type:"Economy",text:"Your next road this round is free.",effect:"roads"},
-    ];
-    function shuffle(arr){return[...arr].sort(()=>Math.random()-.5);}
-    const playerCount=initialPlayers.length;
-    const factions=shuffle(FACTIONS_LOCAL).slice(0,playerCount);
-    const players=initialPlayers.map((p,i)=>({
-      id:String(i),name:p.name,faction:factions[i],gold:10,votes:0,hand:[],roads:0,
-      policiesPlayed:0,votesThisRound:0,freeRoad:false
-    }));
-    const board=shuffle(DISTRICTS_LOCAL).map((d,i)=>({...d,index:i,structures:[],roads:[]}));
-    const deck=shuffle(POLICIES_LOCAL.map((c,i)=>({...c,uid:c.id+'-'+i+'-'+Math.random()})));
-    const initialState={
-      players,board,deck,round:1,phase:"Setup Auction",
-      turn:0,log:["Welcome to Farmageddon Online!"],
-      selectedTile:0,selectedStructure:"farm",selectedPolicy:"",
-      target:"",setupBids:{},voteTarget:"",governor:null,
-      setup:true,_ts:Date.now()
-    };
-    onInit(initialState);
-  },[]);
+    if(!gs||!gs._v)return;
+    if(gs._v!==lastOwnV.current){setLocalGs(gs);setMountKey(gs._v);}
+  },[gs&&gs._v]);
+  function handleAction(newGs){lastOwnV.current=newGs._v;onAction(newGs);}
+  return<FarmageddonPrototype key={mountKey} initialState={localGs} onStateChange={myTurn?handleAction:null} myTurn={myTurn}/>;
+}
 
-  return(
-    <div className="min-h-screen flex items-center justify-center bg-amber-50">
-      <p className="text-slate-600">Setting up game...</p>
-    </div>
-  );
+function App(){
+  const[screen,setScreen]=useState('lobby');
+  const[session,setSession]=useState(null);
+  if(screen==='lobby')return<Lobby onEnter={s=>{setSession(s);setScreen('waiting');}}/>;
+  if(screen==='waiting')return<WaitingRoom {...session} onStart={()=>setScreen('game')}/>;
+  if(screen==='game')return<OnlineGame roomCode={session.roomCode} myId={session.myId}/>;
+  return null;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
