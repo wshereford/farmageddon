@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
 firebase.initializeApp({apiKey:"AIzaSyBWGxGJiNv1s2q6BTjFRfdAcc4OGIltVGc",authDomain:"farmageddon-dae8b.firebaseapp.com",projectId:"farmageddon-dae8b",storageBucket:"farmageddon-dae8b.firebasestorage.app",messagingSenderId:"717454704896",appId:"1:717454704896:web:07d2a5fbaca3cce3e073e5",databaseURL:"https://farmageddon-dae8b-default-rtdb.firebaseio.com"});
-const db=firebase.database();
+const db=firebase.database();h
 window.fbSet=(p,v)=>db.ref(p).set(v);
 window.fbGet=(p)=>db.ref(p).get().then(s=>s.val());
 window.fbWatch=(p,cb)=>{const r=db.ref(p);r.on('value',s=>cb(s.val()));return()=>r.off('value');};
@@ -181,8 +181,8 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
   const [setup, setSetup] = useState(initialState.setup!==undefined?initialState.setup:true);
   const [playerCount, setPlayerCount] = useState(4);
   const [players, setPlayers] = useState(initialState.players||[]);
-  const [board, setBoard] = useState(makeBoard());
-  const [deck, setDeck] = useState(makeDeck());
+  const [board, setBoard] = useState(initialState&&initialState.board?initialState.board:makeBoard());
+  const [deck, setDeck] = useState(initialState&&initialState.deck?initialState.deck:makeDeck());
   const [round, setRound] = useState(initialState.round||1);
   const [phase, setPhase] = useState(initialState.phase||"Setup Auction");
   const [turn, setTurn] = useState(initialState.turn||0);
@@ -192,13 +192,13 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true}) {
   const [selectedPolicy, setSelectedPolicy] = useState("");
   const [target, setTarget] = useState("");
   const [voteTarget, setVoteTarget] = useState("");
-  const [setupBids, setSetupBids] = useState({});
+  const [setupBids, setSetupBids] = useState(initialState&&initialState.setupBids?initialState.setupBids:{});
   const [govBids, setGovBids] = useState(initialState.govBids||{});
   const [orderTokens, setOrderTokens] = useState(initialState.orderTokens||[]);
   const [usedDistricts, setUsedDistricts] = useState(initialState.usedDistricts||[]);
-  const [selfVote, setSelfVote] = useState({});
-  const [votePower, setVotePower] = useState({});
-  const [roadFree, setRoadFree] = useState({});
+  const [selfVote, setSelfVote] = useState(initialState&&initialState.selfVote?initialState.selfVote:{});
+  const [votePower, setVotePower] = useState(initialState&&initialState.votePower?initialState.votePower:{});
+  const [roadFree, setRoadFree] = useState(initialState&&initialState.roadFree?initialState.roadFree:{});
   const [winner, setWinner] = useState(initialState.winner||null);
 
   const _stateRef=useRef({});
