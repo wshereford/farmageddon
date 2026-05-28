@@ -1,0 +1,574 @@
+import React, { useMemo, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Coins, Vote, Crown, Hammer, ScrollText, Handshake, RefreshCcw, Wheat, Landmark, Radio, Factory, FerrisWheel, Droplets, GraduationCap, Trophy } from "lucide-react";
+
+const DISTRICTS = [
+  { id: "rural", name: "Rural", icon: Wheat, text: "Owner: buildings cost 1 less here and gain +1 gold." },
+  { id: "commerce", name: "Commerce", icon: Coins, text: "Owner: gain +3 gold during income." },
+  { id: "civic", name: "Civic", icon: Landmark, text: "Owner: gain +1 vote at end of each election." },
+  { id: "media", name: "Media", icon: Radio, text: "Owner: Score/Combo policies that gain votes gain +1 extra vote." },
+  { id: "industrial", name: "Industrial", icon: Factory, text: "Owner: economic structures here produce +1 extra gold." },
+  { id: "entertainment", name: "Entertainment", icon: FerrisWheel, text: "Owner: vote-gaining buildings here give +1 extra vote." },
+  { id: "river", name: "River", icon: Droplets, text: "Owner: roads cost 1 less here." },
+  { id: "university", name: "University", icon: GraduationCap, text: "Owner: you may play 2 policy cards each round instead of 1." },
+  { id: "fairgrounds", name: "Fairgrounds", icon: Trophy, text: "Owner: public/project style bonuses give +1 extra vote." },
+];
+
+const FACTIONS = [
+  { id: "pig", name: "Pig Syndicate", emoji: "🐷", color: "bg-pink-100 border-pink-300", ability: "When another player votes for you, they gain +2 gold and you gain +1 gold.", description: "Masters of corruption and political dealmaking." },
+  { id: "horse", name: "Horse Union", emoji: "🐴", color: "bg-amber-100 border-amber-300", ability: "Your roads produce +2 gold instead of +1 gold.", description: "Masters of infrastructure and connected road networks." },
+  { id: "duck", name: "Duck Coalition", emoji: "🦆", color: "bg-sky-100 border-sky-300", ability: "Whenever any player builds in the River district, gain +1 gold.", description: "Flexible opportunists that profit from river development." },
+  { id: "goat", name: "Goat Party", emoji: "🐐", color: "bg-stone-100 border-stone-300", ability: "Whenever another player becomes Governor, gain +2 gold.", description: "Anti-government faction that profits when others chase power." },
+];
+
+const STRUCTURES = [
+  { id: "farm", name: "Farm", type: "Economic", cost: 3, text: "+1 gold income." },
+  { id: "market", name: "Marketplace", type: "Economic", cost: 8, text: "+2 gold income." },
+  { id: "silo", name: "Grain Silo", type: "Economic", cost: 5, text: "+2 gold income if you own a Farm." },
+  { id: "windmill", name: "Windmill", type: "Economic", cost: 8, text: "+1 gold income per Rural district you control." },
+  { id: "tax", name: "Tax Office", type: "Economic", cost: 9, text: "+1 gold when another player gains votes." },
+  { id: "capitalbank", name: "Capital Bank", type: "Endgame", cost: 20, text: "End game: +1 vote per 10 unspent gold." },
+  { id: "campaign", name: "Campaign Office", type: "Political", cost: 6, text: "+1 vote at end round if you control this district." },
+  { id: "debate", name: "Debate Stage", type: "Political", cost: 8, text: "Your election vote counts +1." },
+  { id: "rally", name: "Rally Stage", type: "Political", cost: 13, text: "Your election vote counts +2." },
+  { id: "broadcast", name: "Broadcast Tower", type: "Political", cost: 10, text: "+1 vote when your policy gains votes." },
+  { id: "courthouse", name: "Courthouse", type: "Political", cost: 15, text: "+1 vote on Governor rounds." },
+  { id: "capitol", name: "Capitol Arena", type: "Endgame", cost: 18, text: "Votes you gain during Governor rounds are doubled." },
+  { id: "saloon", name: "Saloon", type: "Manipulation", cost: 5, text: "+1 gold when Negotiation begins." },
+  { id: "propaganda", name: "Propaganda Barn", type: "Manipulation", cost: 12, text: "+1 vote when another player votes for you." },
+  { id: "printer", name: "Vote Printer", type: "Manipulation", cost: 14, text: "+1 bonus vote each election." },
+  { id: "booth", name: "Ballot Booth", type: "Manipulation", cost: 12, text: "You may vote for yourself during normal elections." },
+  { id: "shadow", name: "Shadow Cabinet", type: "Manipulation", cost: 14, text: "If you bid second-most for Governor, gain +3 votes." },
+  { id: "antirally", name: "Anti-Establishment Rally", type: "Endgame", cost: 17, text: "When another player becomes Governor, gain +2 votes." },
+  { id: "townsquare", name: "Town Square", type: "Infrastructure", cost: 10, text: "End round: +1 vote per Political structure you own here." },
+  { id: "festival", name: "Festival Grounds", type: "Infrastructure", cost: 12, text: "+2 votes end round if built in Entertainment." },
+  { id: "power", name: "Power Station", type: "Infrastructure", cost: 14, text: "+1 gold and +1 vote end round if district is full." },
+  { id: "logistics", name: "Logistics Center", type: "Infrastructure", cost: 12, text: "+1 gold when building in/next to your road." },
+  { id: "transit", name: "National Transit Hub", type: "Endgame", cost: 18, text: "End round: +1 vote per 3 roads in largest connected network." },
+  { id: "civicmachine", name: "Civic Machine", type: "Endgame", cost: 18, text: "End round: +1 vote per district you control." },
+];
+
+const POLICIES = [
+  { id: "unity", name: "Farm Unity Act", type: "Score", text: "+1 vote if you control 2+ districts.", effect: "unity" },
+  { id: "copycat", name: "Electoral Copycat", type: "Score", text: "+1 vote if another player has more votes than you.", effect: "copycat" },
+  { id: "surge", name: "Popularity Surge", type: "Score", text: "+1 vote. +1 more if you own Debate Stage.", effect: "surge" },
+  { id: "selfvote", name: "Write-In Campaign", type: "Election", text: "You may vote for yourself this round.", effect: "selfvote" },
+  { id: "superballot", name: "Super Ballot", type: "Election", text: "Your election vote counts +1 this round.", effect: "votePower" },
+  { id: "districtmachine", name: "District Machine", type: "Score", text: "+1 vote if you control selected district.", effect: "districtMachine" },
+  { id: "smear", name: "Smear Campaign", type: "Control", text: "Target loses 1 vote.", effect: "smear" },
+  { id: "rural", name: "Rural Outreach", type: "Score", text: "+1 vote if you control a Rural district.", effect: "rural" },
+  { id: "stimulus", name: "Economic Stimulus", type: "Economy", text: "+3 gold.", effect: "stimulus" },
+  { id: "corp", name: "Corporate Donation", type: "Economy", text: "+5 gold. Lose 1 vote if leading.", effect: "corp" },
+  { id: "taxcuts", name: "Tax Cuts", type: "Economy", text: "Everyone +1 gold. +1 vote if you control Commerce.", effect: "taxcuts" },
+  { id: "roads", name: "Highway Expansion", type: "Economy", text: "Your next road this round is free.", effect: "roads" },
+];
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+function makeDeck() { return shuffle(POLICIES.map((c, i) => ({ ...c, uid: `${c.id}-${i}-${Math.random()}` }))); }
+function makeBoard() { return shuffle(DISTRICTS).map((d, i) => ({ ...d, index: i, structures: [], roads: [] })); }
+function adjacentIndexes(i) {
+  const r = Math.floor(i / 3), c = i % 3;
+  return [i - 3, i + 3, i - 1, i + 1].filter(n => n >= 0 && n < 9 && Math.abs((n % 3) - c) + Math.abs(Math.floor(n / 3) - r) === 1);
+}
+function controller(tile) {
+  const m = {};
+  tile.structures.forEach(s => { m[s.owner] = (m[s.owner] || 0) + 1; });
+  const e = Object.entries(m).sort((a, b) => b[1] - a[1]);
+  return !e.length || (e[1] && e[1][1] === e[0][1]) ? null : e[0][0];
+}
+function largestRoadNetwork(board, pid) {
+  const nodes = board.map((t, i) => t.roads.includes(pid) ? i : null).filter(x => x !== null);
+  const seen = new Set();
+  let best = 0;
+  for (const start of nodes) {
+    if (seen.has(start)) continue;
+    const stack = [start];
+    let size = 0;
+    seen.add(start);
+    while (stack.length) {
+      const cur = stack.pop();
+      size++;
+      adjacentIndexes(cur).forEach(n => {
+        if (board[n].roads.includes(pid) && !seen.has(n)) {
+          seen.add(n);
+          stack.push(n);
+        }
+      });
+    }
+    best = Math.max(best, size);
+  }
+  return best;
+}
+
+export default function FarmageddonPrototype() {
+  const [setup, setSetup] = useState(true);
+  const [playerCount, setPlayerCount] = useState(4);
+  const [players, setPlayers] = useState([]);
+  const [board, setBoard] = useState(makeBoard());
+  const [deck, setDeck] = useState(makeDeck());
+  const [round, setRound] = useState(1);
+  const [phase, setPhase] = useState("Setup Auction");
+  const [turn, setTurn] = useState(0);
+  const [log, setLog] = useState(["Welcome to Farmageddon."]);
+  const [selectedTile, setSelectedTile] = useState(0);
+  const [selectedStructure, setSelectedStructure] = useState("farm");
+  const [selectedPolicy, setSelectedPolicy] = useState("");
+  const [target, setTarget] = useState("");
+  const [voteTarget, setVoteTarget] = useState("");
+  const [setupBids, setSetupBids] = useState({});
+  const [govBids, setGovBids] = useState({});
+  const [orderTokens, setOrderTokens] = useState({});
+  const [usedDistricts, setUsedDistricts] = useState([]);
+  const [selfVote, setSelfVote] = useState({});
+  const [votePower, setVotePower] = useState({});
+  const [roadFree, setRoadFree] = useState({});
+  const [winner, setWinner] = useState(null);
+
+  const ctrls = useMemo(() => board.map(controller), [board]);
+  const current = players[turn];
+  const isGovRound = round % 3 === 0;
+  const addLog = (m) => setLog(l => [m, ...l].slice(0, 18));
+  const hasStruct = (pid, id) => !!pid && board.some(t => t.structures.some(s => s.owner === pid && s.id === id));
+  const maxPolicies = (pid) => ctrls.some((c, i) => c === pid && board[i].id === "university") ? 2 : 1;
+
+  function gainVotes(pid, amt) {
+    if (!pid || !amt) return;
+    setPlayers(ps => ps.map(p => {
+      if (p.id === pid) return { ...p, votes: p.votes + amt, votesThisRound: (p.votesThisRound || 0) + amt };
+      return { ...p, gold: p.gold + (hasStruct(p.id, "tax") ? 1 : 0) };
+    }));
+  }
+
+  function start() {
+    const ps = FACTIONS.slice(0, playerCount).map((f, i) => ({
+      id: String(i), faction: f, gold: 10, votes: 0, hand: [], roads: 0, policiesPlayed: 0, votesThisRound: 0, skipBuild: false, isGovernor: false,
+    }));
+    setPlayers(ps);
+    setBoard(makeBoard());
+    setDeck(makeDeck());
+    setSetup(false);
+    setPhase("Setup Auction");
+    setRound(1);
+    setTurn(0);
+    setWinner(null);
+    setLog(["Opening auction: secretly bid gold for starting order."]);
+    setSetupBids({});
+  }
+
+  function resolveSetup() {
+    if (Object.keys(setupBids).length < players.length) return addLog("Need setup bids from every player.");
+    const ordered = [...players].sort((a, b) => (setupBids[b.id] || 0) - (setupBids[a.id] || 0));
+    const tokens = {};
+    const paid = ordered.map((p, i) => {
+      tokens[p.id] = i + 1;
+      return { ...p, gold: p.gold - Math.min(p.gold, setupBids[p.id] || 0) };
+    });
+    setPlayers(paid);
+    setOrderTokens(tokens);
+    setPhase("Income");
+    addLog(`Starting order: ${paid.map((p, i) => `${i + 1}:${p.faction.emoji}`).join(" ")}`);
+  }
+
+  function dealPolicyHands(basePlayers) {
+    const pool = makeDeck();
+    const updated = basePlayers.map((p, i) => ({ ...p, hand: pool.slice(i * 3, i * 3 + 3), policiesPlayed: 0, votesThisRound: 0 }));
+    return { updated, nextDeck: pool };
+  }
+
+  function income() {
+    const gains = players.map(p => {
+      let g = 3;
+      board.forEach((tile, i) => {
+        const owns = ctrls[i] === p.id;
+        if (owns && tile.id === "rural") g += 1;
+        if (owns && tile.id === "commerce") g += 3;
+        const roadCount = tile.roads.filter(r => r === p.id).length;
+        g += roadCount * (p.faction.id === "horse" ? 2 : 1);
+        tile.structures.filter(s => s.owner === p.id).forEach(s => {
+          if (s.id === "farm") g += 1;
+          if (s.id === "market") g += 2;
+          if (s.id === "silo" && hasStruct(p.id, "farm")) g += 2;
+          if (s.id === "windmill") g += ctrls.filter((c, j) => c === p.id && board[j].id === "rural").length;
+          if (owns && tile.id === "industrial" && s.type === "Economic") g += 1;
+        });
+      });
+      return { id: p.id, g };
+    });
+    const paid = players.map(p => ({ ...p, gold: p.gold + (gains.find(x => x.id === p.id)?.g || 0), hand: [], votesThisRound: 0, policiesPlayed: 0 }));
+    const { updated, nextDeck } = dealPolicyHands(paid);
+    setPlayers(updated);
+    setDeck(nextDeck);
+    setUsedDistricts([]);
+    setSelfVote({});
+    setVotePower({});
+    setRoadFree({});
+    setSelectedPolicy("");
+    setPhase("Build");
+    setTurn(0);
+    addLog(`Income paid. ${gains.map(x => `${players.find(p => p.id === x.id)?.faction.emoji}+${x.g}`).join(" ")}. Each player drew 3 from the 12-card policy deck.`);
+  }
+
+  function roadDiscount(pid, tileIndex) {
+    let d = 0;
+    if (board[tileIndex].roads.includes(pid)) d++;
+    if (adjacentIndexes(tileIndex).some(i => board[i].roads.includes(pid))) d++;
+    return d;
+  }
+
+  function next() {
+    if (turn < players.length - 1) { setTurn(turn + 1); return; }
+    setTurn(0);
+    if (phase === "Build") setPhase("Policy");
+    else if (phase === "Policy") {
+      const saloonPay = players.map(p => ({ id: p.id, n: board.reduce((n, t) => n + t.structures.filter(s => s.owner === p.id && s.id === "saloon").length, 0) }));
+      setPlayers(ps => ps.map(p => ({ ...p, gold: p.gold + (saloonPay.find(x => x.id === p.id)?.n || 0) })));
+      setPhase("Negotiation");
+      addLog("Negotiation begins. Saloons paid.");
+    } else if (phase === "Election") endRound();
+  }
+
+  function triggerDuckRiverBuild(tile) {
+    if (tile.id !== "river") return;
+    setPlayers(ps => ps.map(p => p.faction.id === "duck" ? { ...p, gold: p.gold + 1 } : p));
+    addLog("🦆 Duck gained +1 gold from River development.");
+  }
+
+  function buildStructure() {
+    if (!current || phase !== "Build") return;
+    if (usedDistricts.includes(selectedTile)) return addLog("That district is locked this round.");
+    if (current.skipBuild) {
+      setPlayers(ps => ps.map(p => p.id === current.id ? { ...p, skipBuild: false } : p));
+      addLog(`${current.faction.emoji} skipped build.`);
+      next();
+      return;
+    }
+    const base = STRUCTURES.find(s => s.id === selectedStructure);
+    const tile = board[selectedTile];
+    if (!base || !tile) return;
+    if (tile.structures.length >= 4) return addLog("District is full.");
+    let cost = base.cost;
+    if (tile.id === "rural") cost--;
+    cost -= roadDiscount(current.id, selectedTile);
+    cost = Math.max(0, cost);
+    if (current.gold < cost) return addLog("Not enough gold.");
+    const refund = hasStruct(current.id, "logistics") && (tile.roads.includes(current.id) || adjacentIndexes(selectedTile).some(i => board[i].roads.includes(current.id))) ? 1 : 0;
+    setBoard(b => b.map((t, i) => i === selectedTile ? { ...t, structures: [...t.structures, { ...base, owner: current.id, uid: `${Date.now()}-${Math.random()}` }] } : t));
+    setPlayers(ps => ps.map(p => p.id === current.id ? { ...p, gold: p.gold - cost + refund } : p));
+    setUsedDistricts(u => [...u, selectedTile]);
+    triggerDuckRiverBuild(tile);
+    addLog(`${current.faction.emoji} built ${base.name} for ${cost}g${refund ? " (+1 logistics)" : ""}.`);
+    next();
+  }
+
+  function buildRoad() {
+    if (!current || phase !== "Build") return;
+    if (usedDistricts.includes(selectedTile)) return addLog("That district is locked this round.");
+    let cost = 2;
+    if (board[selectedTile].id === "river") cost--;
+    if (roadFree[current.id]) cost = 0;
+    cost = Math.max(0, cost);
+    if (current.gold < cost) return addLog("Not enough gold.");
+    setBoard(b => b.map((t, i) => i === selectedTile ? { ...t, roads: [...t.roads, current.id] } : t));
+    setPlayers(ps => ps.map(p => p.id === current.id ? { ...p, gold: p.gold - cost, roads: p.roads + 1 } : p));
+    setUsedDistricts(u => [...u, selectedTile]);
+    setRoadFree(r => ({ ...r, [current.id]: false }));
+    triggerDuckRiverBuild(board[selectedTile]);
+    addLog(`${current.faction.emoji} built a road for ${cost}g.`);
+    next();
+  }
+
+  function discardAndAdvance(pid) {
+    setPlayers(ps => ps.map(p => p.id === pid ? { ...p, hand: [] } : p));
+    setSelectedPolicy("");
+    setTarget("");
+    next();
+  }
+
+  function playPolicy() {
+    if (!current || !selectedPolicy) return;
+    const card = current.hand.find(c => c.uid === selectedPolicy);
+    if (!card) return;
+    if (current.policiesPlayed >= maxPolicies(current.id)) return addLog("No more policies this turn.");
+    let v = 0;
+    const t = players.find(p => p.id === target);
+    if (card.effect === "unity") v = ctrls.filter(c => c === current.id).length >= 2 ? 1 : 0;
+    if (card.effect === "copycat") v = players.some(p => p.votes > current.votes) ? 1 : 0;
+    if (card.effect === "surge") v = hasStruct(current.id, "debate") ? 2 : 1;
+    if (card.effect === "selfvote") setSelfVote(x => ({ ...x, [current.id]: true }));
+    if (card.effect === "votePower") setVotePower(x => ({ ...x, [current.id]: (x[current.id] || 0) + 1 }));
+    if (card.effect === "districtMachine") v = ctrls[selectedTile] === current.id ? 1 : 0;
+    if (card.effect === "smear" && t) setPlayers(ps => ps.map(p => p.id === t.id ? { ...p, votes: Math.max(0, p.votes - 1) } : p));
+    if (card.effect === "rural") v = ctrls.some((c, i) => c === current.id && board[i].id === "rural") ? 1 : 0;
+    if (card.effect === "stimulus") setPlayers(ps => ps.map(p => p.id === current.id ? { ...p, gold: p.gold + 3 } : p));
+    if (card.effect === "corp") {
+      const high = Math.max(...players.map(p => p.votes));
+      setPlayers(ps => ps.map(p => p.id === current.id ? { ...p, gold: p.gold + 5, votes: p.votes === high && p.votes > 0 ? Math.max(0, p.votes - 1) : p.votes } : p));
+    }
+    if (card.effect === "taxcuts") {
+      setPlayers(ps => ps.map(p => ({ ...p, gold: p.gold + 1 })));
+      if (ctrls.some((c, i) => c === current.id && board[i].id === "commerce")) v = 1;
+    }
+    if (card.effect === "roads") setRoadFree(x => ({ ...x, [current.id]: true }));
+    if (hasStruct(current.id, "broadcast") && v > 0) v++;
+    if (ctrls.some((c, i) => c === current.id && board[i].id === "media") && v > 0) v++;
+    if (v) gainVotes(current.id, v);
+    const played = (current.policiesPlayed || 0) + 1;
+    setPlayers(ps => ps.map(p => p.id === current.id ? { ...p, hand: p.hand.filter(c => c.uid !== card.uid), policiesPlayed: played } : p));
+    addLog(`${current.faction.emoji} played ${card.name}${v ? ` and gained ${v} vote(s)` : ""}.`);
+    setSelectedPolicy("");
+    if (played >= maxPolicies(current.id)) setTimeout(() => discardAndAdvance(current.id), 0);
+  }
+
+  function finishPolicy() {
+    if (!current) return;
+    addLog(`${current.faction.emoji} discarded remaining policies.`);
+    discardAndAdvance(current.id);
+  }
+
+  function resolveGov() {
+    if (Object.keys(govBids).length < players.length) return addLog("Need Governor bids.");
+    const ranked = [...players].map(p => ({ ...p, bid: Math.min(p.gold, govBids[p.id] || 0) })).sort((a, b) => b.bid - a.bid);
+    const win = ranked[0], second = ranked[1];
+    setPlayers(ps => ps.map(p => {
+      let q = { ...p, isGovernor: p.id === win.id };
+      if (p.id === win.id) q.gold -= win.bid;
+      if (p.id !== win.id && p.faction.id === "goat") q.gold += 2;
+      return q;
+    }));
+    if (second && hasStruct(second.id, "shadow")) gainVotes(second.id, 3);
+    players.forEach(p => { if (p.id !== win.id && hasStruct(p.id, "antirally")) gainVotes(p.id, 2); });
+    setGovBids({});
+    addLog(`${win.faction.emoji} won Governor with ${win.bid}g. ${second?.faction.emoji} was second.`);
+  }
+
+  function vote() {
+    if (!current || !voteTarget) return;
+    const canSelf = isGovRound || selfVote[current.id] || hasStruct(current.id, "booth");
+    if (voteTarget === current.id && !canSelf) return addLog("Cannot vote for yourself.");
+    let amt = 1 + (votePower[current.id] || 0);
+    if (hasStruct(current.id, "debate")) amt++;
+    if (hasStruct(current.id, "rally")) amt += 2;
+    if (hasStruct(current.id, "printer")) amt++;
+    const gov = players.find(p => p.isGovernor);
+    const targetId = isGovRound && gov ? gov.id : voteTarget;
+    if (isGovRound && gov && hasStruct(gov.id, "capitol")) amt *= 2;
+    gainVotes(targetId, amt);
+    if (hasStruct(targetId, "propaganda")) gainVotes(targetId, 1);
+    const receiver = players.find(p => p.id === targetId);
+    if (receiver?.faction.id === "pig" && targetId !== current.id) {
+      setPlayers(ps => ps.map(p => p.id === receiver.id ? { ...p, gold: p.gold + 1 } : p.id === current.id ? { ...p, gold: p.gold + 2 } : p));
+    }
+    addLog(`${current.faction.emoji} cast ${amt} vote(s).`);
+    next();
+  }
+
+  function endRound() {
+    board.forEach((tile, i) => {
+      const c = ctrls[i];
+      if (!c) return;
+      if (tile.id === "civic") gainVotes(c, 1);
+      tile.structures.forEach(s => {
+        if (s.owner !== c) return;
+        if (s.id === "campaign") gainVotes(c, 1);
+        if (s.id === "festival" && tile.id === "entertainment") gainVotes(c, 2);
+        if (s.id === "power" && tile.structures.length >= 4) {
+          gainVotes(c, 1);
+          setPlayers(ps => ps.map(p => p.id === c ? { ...p, gold: p.gold + 1 } : p));
+        }
+        if (s.id === "townsquare") gainVotes(c, tile.structures.filter(x => x.owner === c && x.type === "Political").length);
+      });
+    });
+    board.forEach(tile => tile.structures.forEach(s => {
+      if (s.id === "civicmachine") gainVotes(s.owner, ctrls.filter(c => c === s.owner).length);
+      if (s.id === "transit") gainVotes(s.owner, Math.floor(largestRoadNetwork(board, s.owner) / 3));
+    }));
+    if (round >= 9) {
+      const finals = players.map(p => ({ ...p, votes: p.votes + (hasStruct(p.id, "capitalbank") ? Math.floor(p.gold / 10) : 0) }));
+      const sorted = [...finals].sort((a, b) => b.votes - a.votes || b.gold - a.gold);
+      setPlayers(finals);
+      setWinner(sorted[0]);
+      setPhase("Game Over");
+      addLog(`${sorted[0].faction.emoji} wins!`);
+      return;
+    }
+    const ordered = [...players].sort((a, b) => a.votes - b.votes || (orderTokens[b.id] || 0) - (orderTokens[a.id] || 0)).map(p => ({ ...p, hand: [], isGovernor: false }));
+    const tok = {};
+    ordered.forEach((p, i) => { tok[p.id] = i + 1; });
+    setPlayers(ordered);
+    setOrderTokens(tok);
+    setRound(r => r + 1);
+    setPhase("Income");
+    setTurn(0);
+  }
+
+  if (setup) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-sky-50 p-6">
+        <div className="max-w-5xl mx-auto bg-white p-8 rounded-3xl shadow">
+          <h1 className="text-5xl font-black text-green-800">🐷 Farmageddon</h1>
+          <p className="mb-4 text-slate-700">Playable hot-seat prototype.</p>
+          <Select value={String(playerCount)} onValueChange={v => setPlayerCount(Number(v))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2">2 Players</SelectItem>
+              <SelectItem value="3">3 Players</SelectItem>
+              <SelectItem value="4">4 Players</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={start} className="mt-4 w-full bg-green-700">Start Game</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-green-50 to-sky-50 p-4 text-slate-900">
+      <div className="max-w-7xl mx-auto space-y-4">
+        <header className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 bg-white/80 border border-green-100 rounded-3xl shadow-sm p-5">
+          <div>
+            <div className="text-4xl mb-1">🐷🐴🦆🐐</div>
+            <h1 className="text-4xl font-black tracking-tight text-green-800">Farmageddon</h1>
+            <p className="font-semibold text-amber-800">Round {round}/9 • {phase} {isGovRound ? "• Governor Round" : ""}</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Badge className="rounded-xl bg-green-700 text-white px-3 py-2"><Crown className="w-4 h-4 mr-1" /> Current: {current?.faction.emoji || "—"}</Badge>
+            <Button variant="outline" onClick={() => setSetup(true)} className="rounded-xl"><RefreshCcw className="w-4 h-4 mr-1" />Reset</Button>
+          </div>
+        </header>
+
+        {winner && <Card><CardContent className="p-6 text-center text-2xl font-black">{winner.faction.emoji} {winner.faction.name} wins with {winner.votes} votes!</CardContent></Card>}
+
+        {phase === "Setup Auction" && (
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              <h2 className="font-black text-xl">Opening Auction</h2>
+              {players.map(p => (
+                <div key={p.id} className="flex gap-2 items-center">
+                  <span className="w-40">{p.faction.emoji} {p.faction.name}</span>
+                  <Input type="number" onChange={e => setSetupBids(b => ({ ...b, [p.id]: Number(e.target.value || 0) }))} />
+                </div>
+              ))}
+              <Button onClick={resolveSetup}>Resolve Order</Button>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid lg:grid-cols-4 gap-4">
+          <div className="space-y-3">
+            {players.map(p => (
+              <Card key={p.id} className={`rounded-2xl shadow-sm border-2 ${p.faction.color} ${current?.id === p.id ? "ring-4 ring-green-400" : ""}`}>
+                <CardContent className="p-4 text-sm">
+                  <div className="flex items-center justify-between"><div className="font-black text-lg">{p.faction.emoji} {p.faction.name}</div>{p.isGovernor && <Crown className="w-5 h-5 text-yellow-600" />}</div>
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <div className="bg-white/70 rounded-xl p-2"><Coins className="inline w-4" /> <b>{p.gold}</b> gold</div>
+                    <div className="bg-white/70 rounded-xl p-2"><Vote className="inline w-4" /> <b>{p.votes}</b> votes</div>
+                    <div className="bg-white/70 rounded-xl p-2">Roads: <b>{p.roads}</b></div>
+                    <div className="bg-white/70 rounded-xl p-2">Order: <b>{orderTokens[p.id] || "—"}</b></div>
+                    <div className="bg-white/70 rounded-xl p-2 col-span-2"><b>Ability:</b> {p.faction.ability}</div>
+                    <div className="bg-white/70 rounded-xl p-2 col-span-2 text-xs">{p.faction.description}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="lg:col-span-2 grid grid-cols-3 gap-3">
+            {board.map((tile, i) => {
+              const Icon = tile.icon;
+              const c = players.find(p => p.id === ctrls[i]);
+              const locked = usedDistricts.includes(i);
+              return (
+                <button key={i} onClick={() => setSelectedTile(i)} className={`bg-white/90 rounded-2xl border-2 border-amber-200 p-3 text-left min-h-48 shadow-sm hover:shadow-md transition ${selectedTile === i ? "ring-4 ring-green-400 border-green-600" : ""} ${locked ? "opacity-60" : ""}`}>
+                  <div className="flex items-center justify-between"><div className="font-black"><Icon className="inline w-4 mr-1" /> {tile.name}</div><div className="text-lg">{c?.faction.emoji || "—"}</div></div>
+                  <div className="text-xs text-slate-600 mb-2">{tile.text}</div>
+                  {locked && <Badge className="bg-red-600">Locked</Badge>}
+                  <div className="grid grid-cols-2 gap-1 mt-2">
+                    {[0, 1, 2, 3].map(s => {
+                      const st = tile.structures[s];
+                      const o = st && players.find(p => p.id === st.owner);
+                      return <div key={s} className="bg-amber-50 border rounded p-1 text-xs min-h-10">{st ? <>{o?.faction.emoji} {st.name}</> : "Empty"}</div>;
+                    })}
+                  </div>
+                  <div className="text-xs mt-1">Roads: {tile.roads.map(r => players.find(p => p.id === r)?.faction.emoji).join(" ") || "none"}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="space-y-3">
+            <Card className="rounded-2xl shadow-md border-green-100">
+              <CardContent className="p-4 space-y-3">
+                <h2 className="font-black text-lg">Actions</h2>
+                <div className="rounded-xl bg-green-50 border border-green-200 p-2 text-xs text-slate-700"><b>District ownership:</b> own the most buildings in a district.<br /><b>District lock:</b> after any build, that district is locked for the round.<br /><b>Roads:</b> +1 income and -1 build cost in same/adjacent districts.</div>
+                {phase === "Income" && <Button onClick={income} className="w-full">Income + Draw 3</Button>}
+                {phase === "Build" && current && (
+                  <>
+                    <Select value={selectedStructure} onValueChange={setSelectedStructure}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{STRUCTURES.map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.cost}g</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Button onClick={buildStructure} className="w-full"><Hammer className="w-4 mr-1" />Build</Button>
+                    <Button onClick={buildRoad} variant="outline" className="w-full">Build Road</Button>
+                  </>
+                )}
+                {phase === "Policy" && current && (
+                  <>
+                    <p>{current.faction.emoji} policies: {current.policiesPlayed}/{maxPolicies(current.id)}</p>
+                    <Select value={selectedPolicy} onValueChange={setSelectedPolicy}>
+                      <SelectTrigger><SelectValue placeholder="Policy" /></SelectTrigger>
+                      <SelectContent>{current.hand.map(c => <SelectItem key={c.uid} value={c.uid}>{c.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Select value={target} onValueChange={setTarget}>
+                      <SelectTrigger><SelectValue placeholder="Target" /></SelectTrigger>
+                      <SelectContent>{players.filter(p => p.id !== current.id).map(p => <SelectItem key={p.id} value={p.id}>{p.faction.emoji}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <div className="text-xs">{current.hand.find(c => c.uid === selectedPolicy)?.text}</div>
+                    <Button onClick={playPolicy} className="w-full"><ScrollText className="w-4 mr-1" />Play</Button>
+                    <Button onClick={finishPolicy} variant="outline" className="w-full">Finish / Discard Rest</Button>
+                  </>
+                )}
+                {phase === "Negotiation" && (
+                  <>
+                    <p className="text-sm">Negotiate, bribe, trade policy cards, and make non-binding deals.</p>
+                    <Button onClick={() => { setPhase("Election"); setTurn(0); }} className="w-full"><Handshake className="w-4 mr-1" />Start Election</Button>
+                  </>
+                )}
+                {phase === "Election" && (
+                  <>
+                    {isGovRound && !players.some(p => p.isGovernor) ? (
+                      <>
+                        <p>Secret Governor bids.</p>
+                        {players.map(p => <div key={p.id} className="flex gap-2"><span>{p.faction.emoji}</span><Input type="number" onChange={e => setGovBids(b => ({ ...b, [p.id]: Number(e.target.value || 0) }))} /></div>)}
+                        <Button onClick={resolveGov} className="w-full"><Crown className="w-4 mr-1" />Resolve Governor</Button>
+                      </>
+                    ) : (
+                      <>
+                        <Select value={voteTarget} onValueChange={setVoteTarget}>
+                          <SelectTrigger><SelectValue placeholder="Vote for" /></SelectTrigger>
+                          <SelectContent>{players.filter(p => p.id !== current?.id || isGovRound || selfVote[current?.id] || hasStruct(current?.id, "booth")).map(p => <SelectItem key={p.id} value={p.id}>{p.faction.emoji}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <Button onClick={vote} className="w-full"><Vote className="w-4 mr-1" />Cast Vote</Button>
+                      </>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            <Tabs defaultValue="cards">
+              <TabsList className="grid grid-cols-3 w-full rounded-xl"><TabsTrigger value="cards">Cards</TabsTrigger><TabsTrigger value="ref">Ref</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
+              <TabsContent value="cards"><Card className="rounded-2xl"><CardContent className="p-3 space-y-2 max-h-80 overflow-auto">{current?.hand.map(c => <div key={c.uid} className="border rounded-xl p-2 bg-white shadow-sm"><b>{c.name}</b><Badge variant="outline" className="ml-1">{c.type}</Badge><div className="text-xs text-slate-600 mt-1">{c.text}</div></div>)}</CardContent></Card></TabsContent>
+              <TabsContent value="ref"><Card className="rounded-2xl"><CardContent className="p-3 text-xs space-y-3 max-h-80 overflow-auto"><div className="font-black text-base mb-1">📜 RULES REFERENCE</div><div>🔄 <b>Round Flow:</b> Income → Build → Policy → Negotiation → Election</div><div>🏗 <b>District Ownership:</b> control a district by owning the most buildings there.</div><div>🔒 <b>District Lock:</b> once a player builds in a district, nobody else may build there that round.</div><div>🛣 <b>Roads:</b> roads give +1 income and reduce build costs by 1 in the same and adjacent districts. Horse roads give +2 income.</div><div>🗳 <b>Election:</b> every player casts 1 vote at end of round unless modified by cards/buildings.</div><div>👑 <b>Governor Rounds:</b> happen every 3 rounds. Highest bidder becomes Governor and is the only player who pays gold.</div><div>📨 <b>Governor Voting:</b> during Governor rounds, all election votes go to the Governor.</div><div>🥈 <b>Second Place Bids:</b> Shadow Cabinet rewards players for bidding second-highest.</div><div>🤝 <b>Negotiation:</b> players may trade gold, promise votes, and trade policy cards.</div><div>🏆 <b>Winning:</b> after Round 9, the player with the most votes wins.</div><div className="font-black text-base mt-3 mb-1">🏗 BUILDINGS</div>{STRUCTURES.map(s => <div key={s.id}>{s.name} — {s.cost}g: {s.text}</div>)}<b>Policies:</b>{POLICIES.map(p => <div key={p.id}>{p.name}: {p.text}</div>)}</CardContent></Card></TabsContent>
+              <TabsContent value="log"><Card className="rounded-2xl"><CardContent className="p-3 text-xs space-y-1 max-h-80 overflow-auto">{log.map((l, i) => <div key={i} className="border-b">{l}</div>)}</CardContent></Card></TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
