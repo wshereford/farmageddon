@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
 firebase.initializeApp({apiKey:"AIzaSyBWGxGJiNv1s2q6BTjFRfdAcc4OGIltVGc",authDomain:"farmageddon-dae8b.firebaseapp.com",projectId:"farmageddon-dae8b",storageBucket:"farmageddon-dae8b.firebasestorage.app",messagingSenderId:"717454704896",appId:"1:717454704896:web:07d2a5fbaca3cce3e073e5",databaseURL:"https://farmageddon-dae8b-default-rtdb.firebaseio.com"});
-const db=firebase.database();h
+const db=firebase.database();
 window.fbSet=(p,v)=>db.ref(p).set(v);
 window.fbGet=(p)=>db.ref(p).get().then(s=>s.val());
 window.fbWatch=(p,cb)=>{const r=db.ref(p);r.on('value',s=>cb(s.val()));return()=>r.off('value');};
