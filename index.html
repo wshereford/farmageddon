@@ -730,7 +730,7 @@ function WaitingRoom({roomCode,myId,isHost,onStart}){
     const initPlayers=players.map((p,i)=>({id:String(i),name:p.name,faction:factions[i],gold:10,votes:0,hand:[],roads:0,policiesPlayed:0,votesThisRound:0,freeRoad:false}));
     const board=shuffle(DISTRICTS).map((d,i)=>({...d,index:i,structures:[],roads:[]}));
     const deck=shuffle(POLICIES.map((c,i)=>({...c,uid:c.id+i})));
-    const gs={players:initPlayers,board,deck,round:1,phase:"Setup Auction",turn:0,log:["Welcome to Farmageddon Online! "+players.length+" players."],selectedTile:0,selectedStructure:"farm",selectedPolicy:"",target:"",setupBids:{},voteTarget:"",governor:null,setup:true,govBids:{},orderTokens:[],usedDistricts:[],winner:null,_v:Date.now()};
+    const gs={players:initPlayers,board,deck,round:1,phase:"Setup Auction",turn:0,log:["Welcome to Farmageddon Online! "+players.length+" players."],selectedTile:0,selectedStructure:"farm",selectedPolicy:"",target:"",setupBids:{},voteTarget:"",governor:null,setup:false,govBids:{},orderTokens:[],usedDistricts:[],winner:null,_v:Date.now()};
     await window.fbSet('rooms/'+roomCode+'/gameState',gs);
     await window.fbSet('rooms/'+roomCode+'/started',true);
   }
@@ -761,10 +761,20 @@ function WaitingRoom({roomCode,myId,isHost,onStart}){
   );
 }
 
+function normalizeGs(d){
+  function toArr(x){return x==null?[]:Array.isArray(x)?x:Object.values(x);}
+  d.players=toArr(d.players).map(p=>({...p,hand:toArr(p.hand)}));
+  d.board=toArr(d.board).map(t=>({...t,structures:toArr(t.structures),roads:toArr(t.roads)}));
+  d.deck=toArr(d.deck);
+  d.log=toArr(d.log);
+  d.orderTokens=toArr(d.orderTokens);
+  d.usedDistricts=toArr(d.usedDistricts);
+  return d;
+}
 function OnlineGame({roomCode,myId}){
   const[gs,setGs]=useState(null);
   useEffect(()=>{
-    const u=window.fbWatch('rooms/'+roomCode+'/gameState',d=>{if(d)setGs(d);});
+    const u=window.fbWatch('rooms/'+roomCode+'/gameState',d=>{if(d)setGs(normalizeGs(d));});
     return()=>u&&u();
   },[roomCode]);
   const myTurn=gs&&gs.players&&gs.players[gs.turn]&&gs.players[gs.turn].id===myId;
