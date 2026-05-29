@@ -203,8 +203,17 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
   const [myBidAmount, setMyBidAmount] = useState(0);
 
   const _stateRef=useRef({});
-  useEffect(()=>{_stateRef.current={setup,players,board,deck,round,phase,turn,log,govBids,orderTokens,usedDistricts,winner,selectedTile,selectedStructure,selectedPolicy,target,voteTarget,setupBids,selfVote,votePower,roadFree};});
-  function _push(o={}){if(!onStateChange)return;onStateChange({..._stateRef.current,...o,_v:Date.now()});}
+  const _pendingPush=useRef(null);
+  useEffect(()=>{
+    _stateRef.current={setup,players,board,deck,round,phase,turn,log,govBids,orderTokens,usedDistricts,winner,selectedTile,selectedStructure,selectedPolicy,target,voteTarget,setupBids,selfVote,votePower,roadFree};
+    if(_pendingPush.current){
+      const extra=_pendingPush.current;
+      _pendingPush.current=null;
+      if(onStateChange) onStateChange({..._stateRef.current,...extra,_v:Date.now()});
+    }
+  });
+  // Defer the broadcast until AFTER React commits, so _stateRef holds the new state (setState is async).
+  function _push(o={}){_pendingPush.current=o||{};}
 
   const ctrls = useMemo(() => board.map(controller), [board]);
   const current = players[turn];
