@@ -520,10 +520,10 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
           <div>
             <div className="text-4xl mb-1">🐷🐴🦆🐐</div>
             <h1 className="text-4xl font-black tracking-tight text-green-800">Farmageddon</h1>
-            <p className="font-semibold text-amber-800">Round {round}/9 Ã¢ÂÂ¢ {phase} {isGovRound ? "Ã¢ÂÂ¢ Governor Round" : ""}</p>
+            <p className="font-semibold text-amber-800">Round {round}/9 • {phase} {isGovRound ? "• Governor Round" : ""}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Badge className="rounded-xl bg-green-700 text-white px-3 py-2"><Crown className="w-4 h-4 mr-1" /> Current: {current?.faction.emoji || "Ã¢ÂÂ"}</Badge>
+            <Badge className="rounded-xl bg-green-700 text-white px-3 py-2"><Crown className="w-4 h-4 mr-1" /> Current: {current?.faction.emoji || "—"}</Badge>
             <Button variant="outline" onClick={() => setSetup(true)} className="rounded-xl"><RefreshCcw className="w-4 h-4 mr-1" />Reset</Button>
           </div>
         </header>
@@ -573,7 +573,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
                     <div className="bg-white/70 rounded-xl p-2"><Coins className="inline w-4" /> <b>{p.gold}</b> gold</div>
                     <div className="bg-white/70 rounded-xl p-2"><Vote className="inline w-4" /> <b>{p.votes}</b> votes</div>
                     <div className="bg-white/70 rounded-xl p-2">Roads: <b>{p.roads}</b></div>
-                    <div className="bg-white/70 rounded-xl p-2">Order: <b>{orderTokens[p.id] || "Ã¢ÂÂ"}</b></div>
+                    <div className="bg-white/70 rounded-xl p-2">Order: <b>{orderTokens[p.id] || "—"}</b></div>
                     <div className="bg-white/70 rounded-xl p-2 col-span-2"><b>Ability:</b> {p.faction.ability}</div>
                     <div className="bg-white/70 rounded-xl p-2 col-span-2 text-xs">{p.faction.description}</div>
                   </div>
@@ -589,7 +589,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
               const locked = usedDistricts.includes(i);
               return (
                 <button key={i} onClick={() => setSelectedTile(i)} className={`bg-white/90 rounded-2xl border-2 border-amber-200 p-3 text-left min-h-48 shadow-sm hover:shadow-md transition ${selectedTile === i ? "ring-4 ring-green-400 border-green-600" : ""} ${locked ? "opacity-60" : ""}`}>
-                  <div className="flex items-center justify-between"><div className="font-black"><Wheat className="inline w-4 mr-1" /> {tile.name}</div><div className="text-lg">{c?.faction.emoji || "Ã¢ÂÂ"}</div></div>
+                  <div className="flex items-center justify-between"><div className="font-black">{Icon && <Icon className="inline w-4 mr-1" />} {tile.name}</div><div className="text-lg">{c?.faction.emoji || "—"}</div></div>
                   <div className="text-xs text-slate-600 mb-2">{tile.text}</div>
                   {locked && <Badge className="bg-red-600">Locked</Badge>}
                   <div className="grid grid-cols-2 gap-1 mt-2">
@@ -615,7 +615,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
                   <>
                     <Select value={selectedStructure} onValueChange={setSelectedStructure}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{STRUCTURES.map(s => <SelectItem key={s.id} value={s.id}>{s.name} Ã¢ÂÂ {s.cost}g</SelectItem>)}</SelectContent>
+                      <SelectContent>{STRUCTURES.map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.cost}g</SelectItem>)}</SelectContent>
                     </Select>
                     <Button onClick={buildStructure} className="w-full"><Hammer className="w-4 mr-1" />Build</Button>
                     <Button onClick={buildRoad} variant="outline" className="w-full">Build Road</Button>
@@ -668,7 +668,7 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
             <Tabs defaultValue="cards">
               <TabsList className="grid grid-cols-3 w-full rounded-xl"><TabsTrigger value="cards">Cards</TabsTrigger><TabsTrigger value="ref">Ref</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
               <TabsContent value="cards"><Card className="rounded-2xl"><CardContent className="p-3 space-y-2 max-h-80 overflow-auto">{current?.hand.map(c => <div key={c.uid} className="border rounded-xl p-2 bg-white shadow-sm"><b>{c.name}</b><Badge variant="outline" className="ml-1">{c.type}</Badge><div className="text-xs text-slate-600 mt-1">{c.text}</div></div>)}</CardContent></Card></TabsContent>
-              <TabsContent value="ref"><Card className="rounded-2xl"><CardContent className="p-3 text-xs space-y-3 max-h-80 overflow-auto"><div className="font-black text-base mb-1">📜 RULES REFERENCE</div><div>🔄 <b>Round Flow:</b> Income Ã¢ÂÂ Build Ã¢ÂÂ Policy Ã¢ÂÂ Negotiation Ã¢ÂÂ Election</div><div>🏗 <b>District Ownership:</b> control a district by owning the most buildings there.</div><div>🗓 <b>Build Order:</b> each round, the player with the FEWEST votes builds first. Ties broken by previous order token (lower number = builds earlier). This resets each election.</div><div>🔒 <b>District Lock:</b> once a player builds in a district, nobody else may build there that round.</div><div>🛣 <b>Roads:</b> roads give +1 income and reduce build costs by 1 in the same and adjacent districts. Horse roads give +2 income.</div><div>🗳 <b>Election:</b> every player casts 1 vote at end of round unless modified by cards/buildings.</div><div>👑 <b>Governor Rounds:</b> happen every 3 rounds. Highest bidder becomes Governor and is the only player who pays gold.</div><div>📨 <b>Governor Voting:</b> during Governor rounds, all election votes go to the Governor.</div><div>🥈 <b>Second Place Bids:</b> Shadow Cabinet rewards players for bidding second-highest.</div><div>🤝 <b>Negotiation:</b> players may trade gold, promise votes, and trade policy cards.</div><div>🏆 <b>Winning:</b> after Round 9, the player with the most votes wins.</div><div className="font-black text-base mt-3 mb-1">🏗 BUILDINGS</div>{STRUCTURES.map(s => <div key={s.id}>{s.name} Ã¢ÂÂ {s.cost}g: {s.text}</div>)}<b>Policies:</b>{POLICIES.map(p => <div key={p.id}>{p.name}: {p.text}</div>)}</CardContent></Card></TabsContent>
+              <TabsContent value="ref"><Card className="rounded-2xl"><CardContent className="p-3 text-xs space-y-3 max-h-80 overflow-auto"><div className="font-black text-base mb-1">📜 RULES REFERENCE</div><div>🔄 <b>Round Flow:</b> Income → Build → Policy → Negotiation → Election</div><div>🏗 <b>District Ownership:</b> control a district by owning the most buildings there.</div><div>🗓 <b>Build Order:</b> each round, the player with the FEWEST votes builds first. Ties broken by previous order token (lower number = builds earlier). This resets each election.</div><div>🔒 <b>District Lock:</b> once a player builds in a district, nobody else may build there that round.</div><div>🛣 <b>Roads:</b> roads give +1 income and reduce build costs by 1 in the same and adjacent districts. Horse roads give +2 income.</div><div>🗳 <b>Election:</b> every player casts 1 vote at end of round unless modified by cards/buildings.</div><div>👑 <b>Governor Rounds:</b> happen every 3 rounds. Highest bidder becomes Governor and is the only player who pays gold.</div><div>📨 <b>Governor Voting:</b> during Governor rounds, all election votes go to the Governor.</div><div>🥈 <b>Second Place Bids:</b> Shadow Cabinet rewards players for bidding second-highest.</div><div>🤝 <b>Negotiation:</b> players may trade gold, promise votes, and trade policy cards.</div><div>🏆 <b>Winning:</b> after Round 9, the player with the most votes wins.</div><div className="font-black text-base mt-3 mb-1">🏗 BUILDINGS</div>{STRUCTURES.map(s => <div key={s.id}>{s.name} — {s.cost}g: {s.text}</div>)}<b>Policies:</b>{POLICIES.map(p => <div key={p.id}>{p.name}: {p.text}</div>)}</CardContent></Card></TabsContent>
               <TabsContent value="log"><Card className="rounded-2xl"><CardContent className="p-3 text-xs space-y-1 max-h-80 overflow-auto">{log.map((l, i) => <div key={i} className="border-b">{l}</div>)}</CardContent></Card></TabsContent>
             </Tabs>
           </div>
@@ -725,7 +725,7 @@ function Lobby({onEnter}){
             {mode==='join'&&<div><label className="block text-sm font-medium text-slate-700 mb-1">Room code</label><Input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="e.g. ABC123" maxLength={6} className="font-mono text-xl tracking-widest text-center"/></div>}
             {err&&<p className="text-red-500 text-sm font-medium">{err}</p>}
             <div className="flex gap-2 pt-1">
-              <Button variant="ghost" onClick={()=>{setMode(null);setErr('');}} disabled={busy}>Ã¢ÂÂ Back</Button>
+              <Button variant="ghost" onClick={()=>{setMode(null);setErr('');}} disabled={busy}>← Back</Button>
               <Button className="flex-1 bg-green-700" onClick={mode==='create'?create:join} disabled={busy}>{busy?'Please wait...':(mode==='create'?'Create Room':'Join Room')}</Button>
             </div>
           </div>
@@ -780,7 +780,7 @@ function WaitingRoom({roomCode,myId,isHost,onStart}){
           {players.length===0&&<p className="text-slate-400 text-sm text-center">Loading...</p>}
           {players.length>0&&players.length<4&&<p className="text-slate-400 text-sm text-center">Share the code! ({players.length} player{players.length>1?'s':''})</p>}
         </div>
-        {isHost?(<Button className={"w-full h-11 text-base "+(players.length>=2?"bg-green-700":"")} onClick={startGame} disabled={players.length<2}>{players.length<2?'Need 2+ players':'🚀 Start Game'}</Button>):(<p className="text-center text-slate-500 text-sm">Ã¢ÂÂ³ Waiting for host to start...</p>)}
+        {isHost?(<Button className={"w-full h-11 text-base "+(players.length>=2?"bg-green-700":"")} onClick={startGame} disabled={players.length<2}>{players.length<2?'Need 2+ players':'🚀 Start Game'}</Button>):(<p className="text-center text-slate-500 text-sm">⏳ Waiting for host to start...</p>)}
       </div>
     </div>
   );
@@ -788,12 +788,18 @@ function WaitingRoom({roomCode,myId,isHost,onStart}){
 
 function normalizeGs(d){
   function toArr(x){return x==null?[]:Array.isArray(x)?x:Object.values(x);}
+  function toObj(x){return(x==null||Array.isArray(x))?{}:(typeof x==='object'?x:{});}
   d.players=toArr(d.players).map(p=>({...p,hand:toArr(p.hand)}));
   d.board=toArr(d.board).map(t=>({...t,structures:toArr(t.structures),roads:toArr(t.roads)}));
   d.deck=toArr(d.deck);
   d.log=toArr(d.log);
-  d.orderTokens=toArr(d.orderTokens);
+  d.orderTokens=toObj(d.orderTokens);
   d.usedDistricts=toArr(d.usedDistricts);
+  d.setupBids=toObj(d.setupBids);
+  d.govBids=toObj(d.govBids);
+  d.selfVote=toObj(d.selfVote);
+  d.votePower=toObj(d.votePower);
+  d.roadFree=toObj(d.roadFree);
   return d;
 }
 function OnlineGame({roomCode,myId}){
@@ -809,7 +815,7 @@ function OnlineGame({roomCode,myId}){
   return(
     <div>
       <div className={"sticky top-0 z-50 text-center py-2 px-4 text-sm font-semibold shadow "+(myTurn?"bg-green-600 text-white":"bg-slate-700 text-slate-100")}>
-        {myTurn?"Ã¢ÂÂ Your turn! Make a move.":"Ã¢ÂÂ³ Waiting for "+(curP&&curP.faction?curP.faction.emoji+" "+curP.name:"another player")+"..."}
+        {myTurn?"✓ Your turn! Make a move.":"⏳ Waiting for "+(curP&&curP.faction?curP.faction.emoji+" "+curP.name:"another player")+"..."}
       </div>
       <FarmageddonOnline gs={gs} myId={myId} myTurn={!!myTurn} onAction={pushState}/>
     </div>
@@ -817,15 +823,19 @@ function OnlineGame({roomCode,myId}){
 }
 
 function FarmageddonOnline({gs,myId,myTurn,onAction}){
-  const[localGs,setLocalGs]=useState(gs);
-  const[mountKey,setMountKey]=useState(gs&&gs._v?gs._v:1);
+  const[mountKey,setMountKey]=useState(()=>gs&&gs._v?gs._v:1);
   const lastOwnV=useRef(0);
+  const lastGs=useRef(gs);
   useEffect(()=>{
     if(!gs||!gs._v)return;
-    if(gs._v!==lastOwnV.current){setLocalGs(gs);setMountKey(gs._v);}
+    if(gs._v===lastOwnV.current)return;
+    const prev=lastGs.current;
+    const fullReset=gs.round===1&&gs.phase==="Setup Auction"&&prev&&(prev.round>1||prev.phase!=="Setup Auction");
+    lastGs.current=gs;
+    if(fullReset)setMountKey(gs._v);
   },[gs&&gs._v]);
-  function handleAction(newGs){if(!myTurn&&!(newGs.phase==="Setup Auction"&&newGs._bidOnly))return;lastOwnV.current=newGs._v;onAction(newGs);}
-  return<FarmageddonPrototype key={mountKey} initialState={localGs} onStateChange={handleAction} myTurn={myTurn} myId={myId}/>;
+  function handleAction(newGs){if(!myTurn&&!(newGs.phase==="Setup Auction"&&newGs._bidOnly))return;lastOwnV.current=newGs._v;lastGs.current=newGs;onAction(newGs);}
+  return<FarmageddonPrototype key={mountKey} initialState={gs} onStateChange={handleAction} myTurn={myTurn} myId={myId}/>;
 }
 
 function App(){
