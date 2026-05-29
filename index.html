@@ -253,10 +253,12 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
   }
 
   function submitBid(pid, amount) {
-    if(!onStateChange) return;
     const newBids = {...setupBids, [pid]: Number(amount||0)};
     setSetupBids(newBids);
-    onStateChange({..._stateRef.current, setupBids: newBids, _v: Date.now(), _bidOnly: true});
+    setMyBidAmount(0);
+    const nextTurn = turn < players.length - 1 ? turn + 1 : turn;
+    setTurn(nextTurn);
+    if(onStateChange) onStateChange({..._stateRef.current, setupBids: newBids, turn: nextTurn, _v: Date.now(), _bidOnly: true});
   }
   function dealPolicyHands(basePlayers) {
     const pool = makeDeck();
@@ -536,22 +538,24 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
               <h2 className="font-black text-xl">Opening Auction</h2>
               <p className="text-sm text-slate-600">Secretly bid gold to determine turn order. Highest bidder goes first and pays their bid. Others keep their gold.</p>
               <div className="space-y-2">
-                {players.map(p => {
+                {players.map((p, pi) => {
                   const hasBid = setupBids[p.id] !== undefined;
-                  const isMe = myId !== null ? p.id === myId : true;
+                  // online: only my row is "mine"; hotseat: only current turn player
+                  const isMyRow = myId !== null ? p.id === myId : p.id === current?.id;
+                  const isActiveRow = isMyRow && !hasBid;
                   return (
-                    <div key={p.id} className={`flex gap-2 items-center p-2 rounded-xl ${isMe ? "bg-amber-50 border border-amber-300" : "bg-slate-50"}`}>
+                    <div key={p.id} className={`flex gap-2 items-center p-2 rounded-xl ${isMyRow ? "bg-amber-50 border border-amber-300" : "bg-slate-50"}`}>
                       <span className="w-40 font-medium">{p.faction.emoji} {p.faction.name}</span>
-                      {isMe && !hasBid && (
-                        <Input type="number" min="0" max={p.gold} placeholder={`0â${p.gold}g`}
+                      {isActiveRow && (
+                        <Input type="number" min="0" max={p.gold} placeholder={`0-${p.gold}g`}
                           value={myBidAmount} onChange={e => setMyBidAmount(Number(e.target.value||0))} className="w-24" />
                       )}
-                      {isMe && !hasBid && (
+                      {isActiveRow && (
                         <Button size="sm" onClick={() => submitBid(p.id, myBidAmount)}
                           className="bg-green-700">Lock In Bid</Button>
                       )}
-                      {hasBid && <span className="text-green-600 font-semibold text-sm">â Bid locked{isMe ? ` (${setupBids[p.id]}g)` : ""}</span>}
-                      {!hasBid && !isMe && <span className="text-slate-400 text-sm italic">Waiting...</span>}
+                      {hasBid && <span className="text-green-600 font-semibold text-sm">✓ Bid locked{isMyRow ? ` (${setupBids[p.id]}g)` : ""}</span>}
+                      {!hasBid && !isActiveRow && <span className="text-slate-400 text-sm italic">{myId === null && !hasBid && p.id !== current?.id ? "Pass device to next player..." : "Waiting..."}</span>}
                     </div>
                   );
                 })}
