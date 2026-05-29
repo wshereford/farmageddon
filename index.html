@@ -249,7 +249,8 @@ function FarmageddonPrototype({initialState={},onStateChange,myTurn=true,myId=nu
     setPlayers(paid);
     setOrderTokens(tokens);
     setPhase("Income");
-    addLog(`Starting order: ${paid.map((p, i) => `${i + 1}:${p.faction.emoji}`).join(" ")}`);    _push();
+    setTurn(0);
+    addLog(`Starting order: ${paid.map((p, i) => `${i + 1}:${p.faction.emoji}`).join(" ")}`);    _push({turn:0});
   }
 
   function submitBid(pid, amount) {
@@ -829,16 +830,12 @@ function OnlineGame({roomCode,myId}){
 function FarmageddonOnline({gs,myId,myTurn,onAction}){
   const[mountKey,setMountKey]=useState(()=>gs&&gs._v?gs._v:1);
   const lastOwnV=useRef(0);
-  const lastGs=useRef(gs);
   useEffect(()=>{
     if(!gs||!gs._v)return;
     if(gs._v===lastOwnV.current)return;
-    const prev=lastGs.current;
-    const fullReset=gs.round===1&&gs.phase==="Setup Auction"&&prev&&(prev.round>1||prev.phase!=="Setup Auction");
-    lastGs.current=gs;
-    if(fullReset)setMountKey(gs._v);
+    setMountKey(gs._v);
   },[gs&&gs._v]);
-  function handleAction(newGs){if(!myTurn&&!(newGs.phase==="Setup Auction"&&newGs._bidOnly))return;lastOwnV.current=newGs._v;lastGs.current=newGs;onAction(newGs);}
+  function handleAction(newGs){if(!myTurn&&!(newGs.phase==="Setup Auction"&&newGs._bidOnly))return;lastOwnV.current=newGs._v;onAction(newGs);}
   return<FarmageddonPrototype key={mountKey} initialState={gs} onStateChange={handleAction} myTurn={myTurn} myId={myId}/>;
 }
 
