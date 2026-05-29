@@ -802,7 +802,13 @@ function WaitingRoom({roomCode,myId,isHost,onStart}){
 
 function normalizeGs(d){
   function toArr(x){return x==null?[]:Array.isArray(x)?x:Object.values(x);}
-  function toObj(x){return(x==null||Array.isArray(x))?{}:(typeof x==='object'?x:{});}
+  // Player-id-keyed maps ({"0":3}) get auto-coerced by Firebase into arrays ([3]).
+  // Rebuild them as index-keyed objects instead of discarding (keys ARE the player ids).
+  function toObj(x){
+    if(x==null) return {};
+    if(Array.isArray(x)){const o={};x.forEach((v,i)=>{if(v!==null&&v!==undefined)o[String(i)]=v;});return o;}
+    return typeof x==='object'?x:{};
+  }
   d.players=toArr(d.players).map(p=>({...p,hand:toArr(p.hand)}));
   d.board=toArr(d.board).map(t=>({...t,structures:toArr(t.structures),roads:toArr(t.roads)}));
   d.deck=toArr(d.deck);
